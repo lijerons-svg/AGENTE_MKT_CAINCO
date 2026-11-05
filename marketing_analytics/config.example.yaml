@@ -1,0 +1,106 @@
+# Copiar a config.yaml y completar con los datos reales.
+# Nada de tokens/API keys acá — eso va en .env (ver .env.example).
+
+general:
+  timezone: "America/La_Paz"
+  output_dir: "output"
+  database_path: "database/historico_rrss.db"
+  date_range:
+    modo: "last_n_days"
+    ultimos_n_dias: 30  # solo se usa como arranque, antes de que exista un checkpoint
+    # Días que se vuelven a traer aunque ya estén cargados: Meta Ads sigue
+    # ajustando gasto/resultados por su ventana de atribución estándar
+    # ("7 días clic, 1 día vista") — sin este solape esos ajustes tardíos
+    # se pierden en silencio (el checkpoint automático no vuelve a mirar
+    # fechas pasadas). 0 para desactivarlo.
+    dias_solape: 7
+    # Para un rango fijo en vez de "últimos N días":
+    # modo: "custom"
+    # fecha_inicio: "2026-07-01"
+    # fecha_fin: "2026-07-31"
+
+meta:
+  # Verificar vigencia en developers.facebook.com/docs/graph-api/changelog/versions/
+  # antes de asumir que sigue siendo la version actual.
+  api_version: "v25.0"
+  organico:
+    perfiles:
+      # Agregar un perfil nuevo = una entrada más acá. No requiere tocar código.
+      # "unidad" agrupa Facebook + Instagram de la misma marca como un solo
+      # perfil unificado (dashboard Control de Contenido) — si se omite, se
+      # usa "nombre" (retrocompatible).
+      - id: "perfil_001"
+        nombre: "Marca X - Instagram"
+        unidad: "Marca X"
+        red: "instagram"
+        ig_user_id: "REEMPLAZAR_IG_USER_ID"
+      - id: "perfil_002"
+        nombre: "Marca X - Facebook"
+        unidad: "Marca X"
+        red: "facebook"
+        page_id: "REEMPLAZAR_PAGE_ID"
+  ads:
+    cuentas:
+      # "moneda" es obligatoria: dos cuentas de la misma organización pueden
+      # facturar en monedas distintas, y el reporte agrupa el gasto por
+      # moneda en vez de sumarlas a ciegas.
+      - id: "act_REEMPLAZAR"
+        nombre: "Cuenta Principal"
+        moneda: "BOB"
+
+mailchimp:
+  server_prefix: "us21"  # datacenter de tu API key de Mailchimp (el sufijo después del guion)
+  enabled: true
+
+calendario:
+  # Calendario de publicaciones del equipo, en un Excel de SharePoint.
+  # Necesita un App Registration en Azure AD con permiso Sites.Read.All
+  # (Microsoft Graph, application permission, con consentimiento de admin) —
+  # ver .env.example para los secretos correspondientes.
+  enabled: false
+  sharepoint_hostname: "REEMPLAZAR.sharepoint.com"
+  site_path: "/sites/REEMPLAZAR"
+  file_name: "REEMPLAZAR.xlsx"
+  sheet_name: "REEMPLAZAR"
+
+linkedin:
+  # Community Management API: autoriza UNA sola organización por vez (no una
+  # lista de perfiles como Meta), y el access token lo consigue a mano una
+  # persona admin de esa página — ver
+  # marketing_analytics/connectors/linkedin/obtener_token.py — en vez de un
+  # token de sistema permanente. Vence cada ~60 días; hay que volver a
+  # correr ese script antes de esa fecha.
+  enabled: false
+  organization_id: "REEMPLAZAR"  # ID numérico de la organización (se ve en la URL del admin de la página)
+  nombre: "REEMPLAZAR"  # nombre a mostrar en los reportes, ej. "CAINCO"
+
+competencia:
+  # Solo para el reporte PPT mensual (marketing_analytics.reports_pptx).
+  # Solo Facebook: es la única red donde Meta expone públicamente
+  # seguidores y texto de publicaciones de una página que no administrás
+  # — Instagram y LinkedIn no tienen equivalente, no se puede rastrear
+  # competencia ahí por API.
+  enabled: false  # poner en true cuando completes tu lista real de abajo
+  perfiles:
+    - unidad: "Academy Cainco"
+      nombre: "InnovaEdu"
+      facebook_page_alias: "InnovaEdu.bo"
+    - unidad: "Academy Cainco"
+      nombre: "CENACE - UPSA"
+      facebook_page_alias: "cenaceupsabolivia"
+    - unidad: "Academy Cainco"
+      nombre: "Cognos Capacitación"
+      facebook_page_alias: "CognosCapacitacion"
+
+reportes_pptx:
+  # Vacío = genera el PPT de todas las unidades. Si solo te interesan
+  # algunas, listalas acá (deben coincidir exactamente con el nombre de
+  # "unidad" que usás en meta.organico.perfiles) — se puede seguir
+  # sobreescribiendo puntualmente con --unidad en la línea de comando.
+  unidades:
+    - "Academy Cainco"
+    - "Acierta CAINCO"
+    - "GS1 Bolivia"
+    - "ICC Bolivia"
+    - "Santa Cruz Innova"
+    - "Fundares Santa Cruz"
