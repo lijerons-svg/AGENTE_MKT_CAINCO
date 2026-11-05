@@ -1,0 +1,20 @@
+# dependencias
+node_modules/
+package-lock.json
+
+# temporales / extracción
+_extracted/
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# marketing_analytics
+marketing_analytics/.env
+marketing_analytics/config.yaml
+marketing_analytics/__pycache__/
+marketing_analytics/**/__pycache__/
+marketing_analytics/.pytest_cache/
+marketing_analytics/database/*.db
+marketing_analytics/output/

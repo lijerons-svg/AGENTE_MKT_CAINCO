@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Acierta by CAINCO — Plan de Marketing 6 meses</title>
+<style>
+:root {
+  --ink:#1A2238; --orange:#E8732A; --paper:#FFFFFF;
+  --mist:#F2F4F8; --line:#D9DEE7; --good:#1F7A4D;
+  --bad:#B23A48; --muted:#5B6577;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#c9ced8; font-family:Segoe UI, Arial, sans-serif; color:var(--ink); padding:24px 0; }
+.slide {
+  width:1280px; height:720px; margin:0 auto 28px; background:var(--paper);
+  position:relative; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.18);
+  padding:64px 72px;
+}
+.slide::after {
+  content:""; position:absolute; left:0; right:0; bottom:0; height:8px;
+  background:var(--orange);
+}
+.kicker { color:var(--orange); font-weight:700; letter-spacing:3px; font-size:18px; }
+h1 { font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:1.15; margin:6px 0 4px; }
+.sub { color:var(--muted); font-size:20px; margin-bottom:28px; }
+.foot { position:absolute; left:72px; bottom:18px; color:var(--muted); font-size:13px; }
+.pageno { position:absolute; right:72px; bottom:18px; color:var(--muted); font-size:13px; }
+.note { position:absolute; left:72px; bottom:40px; right:72px; color:#8a93a6;
+  font-size:13px; font-style:italic; border-left:3px solid var(--orange); padding-left:10px; }
+
+/* cover */
+.cover { display:flex; flex-direction:column; justify-content:center; height:100%; }
+.cover h1 { font-size:64px; margin:14px 0; }
+.cover .csub { font-size:26px; color:var(--muted); max-width:900px; }
+.cover .cmeta { margin-top:30px; color:var(--orange); font-weight:600; font-size:18px; }
+
+/* two columns */
+.cols { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+.col { border:1px solid var(--line); border-radius:10px; padding:22px 24px; background:var(--mist); }
+.col .clabel { font-weight:800; letter-spacing:1px; font-size:16px; margin-bottom:14px; }
+.col.good .clabel { color:var(--good); }
+.col.bad .clabel { color:var(--bad); }
+.col ul { list-style:none; }
+.col li { font-size:18px; line-height:1.4; padding:9px 0 9px 22px; position:relative; border-top:1px solid var(--line); }
+.col li:first-child { border-top:none; }
+.col li::before { content:"\25B8"; position:absolute; left:0; color:var(--orange); }
+
+/* table */
+table { width:100%; border-collapse:collapse; font-size:17px; }
+th { background:var(--ink); color:#fff; text-align:left; padding:12px 14px; font-size:15px; letter-spacing:.5px; }
+td { padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:nth-child(even) td { background:var(--mist); }
+.callout { margin-top:22px; background:#fff4ec; border:1px solid var(--orange); border-radius:10px; padding:16px 20px; }
+.callout .clabel { color:var(--orange); font-weight:800; letter-spacing:1px; font-size:15px; }
+.callout .ctext { font-size:18px; line-height:1.4; margin-top:6px; }
+
+/* cards */
+.cards { display:grid; gap:18px; }
+.cards.c2 { grid-template-columns:1fr 1fr; }
+.cards.c3 { grid-template-columns:1fr 1fr 1fr; }
+.card { border:1px solid var(--line); border-top:4px solid var(--orange); border-radius:10px; padding:18px 20px; background:#fff; }
+.card .clabel { font-weight:800; color:var(--ink); font-size:18px; margin-bottom:8px; }
+.card .cbody { font-size:16px; line-height:1.4; color:#33405b; }
+.facts { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+.fact { background:var(--ink); color:#fff; border-radius:20px; padding:7px 16px; font-size:14px; font-weight:600; }
+
+/* statement */
+.quote { font-family:Georgia, 'Times New Roman', serif; font-size:34px; line-height:1.3; color:var(--ink);
+  border-left:6px solid var(--orange); padding:6px 0 6px 24px; margin:10px 0 26px; }
+.shift { display:flex; align-items:center; gap:18px; font-size:20px; margin-bottom:20px; }
+.shift .from { background:var(--mist); border:1px solid var(--line); border-radius:8px; padding:12px 18px; color:var(--muted); }
+.shift .arrow { color:var(--orange); font-size:30px; font-weight:800; }
+.shift .to { background:var(--ink); color:#fff; border-radius:8px; padding:12px 18px; font-weight:600; }
+.extra { font-size:17px; line-height:1.5; color:#33405b; max-width:980px; }
+
+/* objectives */
+.objs { display:grid; gap:18px; }
+.obj { border:1px solid var(--line); border-radius:10px; padding:18px 22px; background:#fff; display:grid; grid-template-columns:120px 1fr; gap:18px; }
+.obj .tag { background:var(--orange); color:#fff; font-weight:800; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.obj .oname { font-weight:700; font-size:20px; }
+.obj .ogoal { font-size:17px; line-height:1.4; color:#33405b; margin:6px 0 10px; }
+.kpis { display:flex; flex-wrap:wrap; gap:8px; }
+.kpi { background:var(--mist); border:1px solid var(--line); border-radius:16px; padding:5px 13px; font-size:13px; color:var(--ink); font-weight:600; }
+
+/* timeline */
+.tl { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-top:10px; }
+.tstep { background:#fff; border:1px solid var(--line); border-top:4px solid var(--orange); border-radius:10px; padding:16px 14px; }
+.tstep .when { font-weight:800; color:var(--orange); font-size:22px; }
+.tstep .what { font-size:14px; line-height:1.35; color:#33405b; margin-top:8px; }
+
+/* numbered */
+.nums { display:grid; gap:18px; }
+.num { display:grid; grid-template-columns:70px 1fr; gap:20px; align-items:start; border-bottom:1px solid var(--line); padding-bottom:16px; }
+.num .ncircle { width:60px; height:60px; border-radius:50%; background:var(--ink); color:#fff; font-size:30px; font-weight:800; display:flex; align-items:center; justify-content:center; font-family:Georgia, 'Times New Roman', serif; }
+.num .nhead { font-weight:800; font-size:22px; }
+.num .nbody { font-size:18px; line-height:1.4; color:#33405b; margin-top:4px; }
+
+@media print {
+  @page { size:1280px 720px; margin:0; }
+  body { background:#fff; padding:0; }
+  .slide { margin:0; box-shadow:none; page-break-after:always; }
+}
+</style>
+</head><body>
+<section class="slide"><div class="cover">
+          <div class="kicker">PLAN DE MARKETING · 6 MESES</div>
+          <h1>Acierta by CAINCO</h1>
+          <div class="csub">De agencia que llena vacantes a socio de gestión de personas y de negocio</div>
+          <div class="cmeta">15 min exposición + 10 min debate · Panel exige datos</div>
+        </div><div class="note">Nota oral: Abro reconociendo el activo: Acierta no parte de cero, parte del respaldo de CAINCO.</div><div class="pageno">1/10</div></section>
+<section class="slide"><div class="kicker">Auditoría digital · evidencia mayo 2026</div><h1>Acierta no parte de cero: 3 fortalezas reales, 3 brechas que cuestan leads</h1><div class="cols"><div class="col good"><div class="clabel">FORTALEZAS</div><ul><li>Respaldo CAINCO: +100 años, 4.000 asociadas, 45.8k seguidores en LinkedIn — credibilidad que ningún privado replica.</li><li>Base social ya construida: 19.752 likes en Facebook, hoy subutilizada.</li><li>Data económica propia (CEBEC) + mensajes de valor ya redactados = activo de contenido único.</li></ul></div><div class="col bad"><div class="clabel">DEBILIDADES</div><ul><li>Identidad fragmentada: 2 dominios, showcase escondido, 3 WhatsApp — el lead no sabe dónde vive Acierta.</li><li>El feed es bolsa de empleos: comunica &#x27;agencia de vacantes&#x27;, invisibiliza consultoría y planificación.</li><li>Canal B2B desaprovechado: el peso está en Facebook (B2C) y solo 4 reseñas → cero prueba social corporativa.</li></ul></div></div><div class="note">Nota oral: Las fortalezas ya están pagadas; las debilidades son de ejecución, no de presupuesto.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">2/10</div></section>
+<section class="slide"><div class="kicker">Mapa competitivo · 4 jugadores directos</div><h1>Hay un cuadrante que nadie ocupa: respaldo institucional + cercanía + precio accesible</h1><table><thead><tr><th>Competidor</th><th>Posicionamiento</th><th>Diferenciador</th><th>Huella digital</th></tr></thead><tbody><tr><td>Manpower Bolivia</td><td>Líder global, transaccional</td><td>Marca mundial, escala</td><td>LinkedIn 10.3k · FB 17.5k</td></tr><tr><td>EY Bolivia</td><td>Big Four, premium</td><td>Metodología global, prestigio</td><td>Marca global, web robusta</td></tr><tr><td>Exaudi</td><td>Boutique familiar</td><td>Foco 100% empresa familiar</td><td>Nicho, eventos en SC</td></tr><tr><td>Heranza / Kriterio</td><td>Boutiques locales</td><td>Cercanía, diagnóstico gratis</td><td>Web propia, menor escala</td></tr></tbody></table><div class="callout"><div class="clabel">EL HUECO</div><div class="ctext">Manpower comunica &#x27;empleo&#x27;; Acierta debe comunicar &#x27;empresa&#x27;. Respaldo CAINCO + red de 4.000 asociados + precio local = cuadrante vacío y defendible.</div></div><div class="note">Nota oral: Nadie combina aval gremial y cercanía local: ese es nuestro terreno.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">3/10</div></section>
+<section class="slide"><div class="kicker">Contexto macro mayo 2026 · 4 insights accionables</div><h1>La crisis no es excusa: es el gancho de venta de los servicios olvidados</h1><div class="cards c2"><div class="card"><div class="clabel">M1 · Flight to value</div><div class="cbody">Caja apretada sube el miedo al mal hire. Vender R&amp;S como seguro anti-error, con ROI en bolivianos y costo evitado.</div></div><div class="card"><div class="clabel">M2 · La crisis vende</div><div class="cbody">Reestructuración, sucesión y planificación son MÁS necesarias en recesión. Reposicionar como &#x27;resiliencia&#x27;, no lujo.</div></div><div class="card"><div class="clabel">M3 · Data como imán</div><div class="cbody">Con incertidumbre cambiaria, los datos CEBEC sobre inflación/dólar son imán de leads B2B. Convertir data en marketing.</div></div><div class="card"><div class="clabel">M4 · Orgánico primero</div><div class="cbody">Divisas escasas → owned-media (LinkedIn, webinars, base CAINCO) y mínima pauta en USD. El plan se ve barato y medible.</div></div></div><div class="facts"><span class="fact">Inflación 20,4% → meta 14-15%</span><span class="fact">Dólar Bs 11 → 9,6</span><span class="fact">PIB 2026 -3,2%</span></div><div class="note">Nota oral: Tres datos macro que reconvierto en argumento de venta, no en queja.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">4/10</div></section>
+<section class="slide"><div class="kicker">Modelo endorsed brand</div><h1>Arquitectura de marca: Acierta gana identidad propia sin perder el aval de CAINCO</h1><div class="quote">&ldquo;El conocimiento del tejido empresarial de CAINCO, puesto a trabajar dentro de tu empresa.&rdquo;</div><div class="shift"><span class="from">Agencia que llena vacantes</span><span class="arrow">&rarr;</span><span class="to">Socio de gestión de personas y de negocio</span></div><div class="extra">Firma siempre &#x27;Acierta, by CAINCO&#x27;. CAINCO = aval de confianza; Acierta = especialista ágil y cercano. Líneas: Acierta Consultoría · Acierta Inteligencia Económica.</div><div class="note">Nota oral: Diferenciación sin orfandad institucional: ese es el equilibrio.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">5/10</div></section>
+<section class="slide"><div class="kicker">El primer logro es poder medir</div><h1>Dos objetivos SMART, con un baseline honesto: hoy hay 0 métricas</h1><div class="objs"><div class="obj"><div class="tag">SMART 1</div><div><div class="oname">Diversificar ingresos más allá del core</div><div class="ogoal">Llevar las líneas no-core (Familiares, Planificación, Asesoría Económica) a 25% de los leads calificados en 6 meses.</div><div class="kpis"><span class="kpi">% leads no-core / total</span><span class="kpi">nº leads por línea</span><span class="kpi">nº inscritos por webinar</span></div></div></div><div class="obj"><div class="tag">SMART 2</div><div><div class="oname">Construir el sistema de medición inexistente</div><div class="ogoal">Implementar embudo medible (lead→SQL→cierre) y reportar CAC, conversión y ROI mensual desde el mes 2, con tablero para Gerencia.</div><div class="kpis"><span class="kpi">CAC por servicio</span><span class="kpi">tasa lead→cierre</span><span class="kpi">ROI por campaña</span></div></div></div></div><div class="note">Nota oral: No maquillo números que no existen: el Objetivo 2 es justamente construirlos.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">6/10</div></section>
+<section class="slide"><div class="kicker">Canal B2B principal · 3-4 posts/semana, regla 4-1-1</div><h1>Estrategia de contenidos en LinkedIn: 4 pilares con mensaje segmentado</h1><div class="cards c2"><div class="card"><div class="clabel">P1 · Inteligencia económica</div><div class="cbody">Data CEBEC, inflación/dólar/sector → autoridad e imán de decisores. 1/sem.</div></div><div class="card"><div class="clabel">P2 · Gestión de personas</div><div class="cbody">Tips de selección, costo de mala contratación, cultura. Utilidad. 1/sem.</div></div><div class="card"><div class="clabel">P3 · Empresa familiar &amp; estrategia</div><div class="cbody">Sucesión, gobierno, casos. Nicho premium. 1 cada 2 sem.</div></div><div class="card"><div class="clabel">P4 · Prueba social &amp; marca</div><div class="cbody">Casos de éxito, testimonios, equipo, CTA. Conversión. 1 cada 2 sem.</div></div></div><div class="facts"><span class="fact">PYME/familiar → continuidad y orden</span><span class="fact">Corporativo → talento y velocidad</span><span class="fact">C-level → decidir mejor</span><span class="fact">RRHH → evaluaciones y outplacement</span></div><div class="note">Nota oral: Cada pilar habla a un dolor distinto: no es contenido genérico.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">7/10</div></section>
+<section class="slide"><div class="kicker">Impacto rápido con activos que ya existen</div><h1>Tres quick wins de los primeros 60 días, casi sin presupuesto</h1><div class="cards c3"><div class="card"><div class="clabel">QW1 · Unificar identidad</div><div class="cbody">1 landing, 1 WhatsApp Business, bios consistentes &#x27;Acierta by CAINCO&#x27;. Claridad + medición a costo casi cero.</div></div><div class="card"><div class="clabel">QW2 · Pulso Económico</div><div class="cbody">1 reporte/webinar mensual con data CEBEC sobre dólar/inflación → captura leads B2B con un activo que ya existe.</div></div><div class="card"><div class="clabel">QW3 · Activar prueba social</div><div class="cbody">Campaña de testimonios + reseñas (hoy solo 4) + 3 mini-casos en LinkedIn. Reputación convertida en venta.</div></div></div><div class="note">Nota oral: Empiezo por lo que no cuesta divisas y se nota en semanas.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">8/10</div></section>
+<section class="slide"><div class="kicker">Hitos mes a mes</div><h1>Roadmap de 6 meses: del orden inicial a la medición de ROI</h1><div class="tl"><div class="tstep"><div class="when">M1</div><div class="what">Diagnóstico + unificación de identidad + setup CRM/UTMs (QW1).</div></div><div class="tstep"><div class="when">M2</div><div class="what">Lanzamiento Pulso Económico + parrilla LinkedIn + 1er dashboard (QW2).</div></div><div class="tstep"><div class="when">M3</div><div class="what">Campaña testimonios/casos + landings por servicio (QW3).</div></div><div class="tstep"><div class="when">M4</div><div class="what">Campaña foco no-core #1 (Empresa Familiar) + webinar.</div></div><div class="tstep"><div class="when">M5</div><div class="what">Campaña foco no-core #2 (Planificación &#x27;resiliencia&#x27;) + nurturing.</div></div><div class="tstep"><div class="when">M6</div><div class="what">Medición, optimización y reporte semestral con CAC/conversión/ROI.</div></div></div><div class="note">Nota oral: Cada mes deja un entregable medible sobre la mesa de Gerencia.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">9/10</div></section>
+<section class="slide"><div class="kicker">Criterios de éxito a 6 meses</div><h1>Cómo sabrá Gerencia que funcionó: 3 criterios y un reporte mensual</h1><div class="nums"><div class="num"><div class="ncircle">1</div><div><div class="nhead">Diversificación</div><div class="nbody">≥25% de leads calificados provienen de líneas no-core, reduciendo la dependencia del R&amp;S.</div></div></div><div class="num"><div class="ncircle">2</div><div><div class="nhead">Sistema medible operando</div><div class="nbody">CAC, conversión y ROI reportados cada mes (hoy: 0 métricas).</div></div></div><div class="num"><div class="ncircle">3</div><div><div class="nhead">Eficiencia en crisis</div><div class="nbody">Costo por lead a la baja mes a mes, con marketing mayoritariamente orgánico.</div></div></div></div><div class="note">Nota oral: Cierro con la promesa concreta: un tablero mensual, no promesas vagas.</div><div class="foot">Acierta by CAINCO · Plan de Marketing · 2026</div><div class="pageno">10/10</div></section>
+</body></html>
