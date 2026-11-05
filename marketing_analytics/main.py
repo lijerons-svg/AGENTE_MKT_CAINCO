@@ -140,8 +140,8 @@ def publicar_github_pages(ruta_html: Path) -> None:
     y que git tenga credenciales configuradas (GitHub CLI, credential manager, etc.).
     Si algo falla, solo muestra un aviso — no interrumpe la corrida.
     """
-    # Ruta del repo: dos niveles arriba de marketing_analytics/main.py
-    repo_root = Path(__file__).parent.parent.resolve()
+    # Ruta del repo de publicación (AGENTE_MKT_CAINCO en tu compu)
+    repo_root = Path(r"C:\Users\sandylu\Claude\Projects\AGENTE_MKT_CAINCO")
     docs_dir = repo_root / "docs"
     destino = docs_dir / "index.html"
 
