@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "case": "ACIERTA by CAINCO",
+    "title": "Acierta by CAINCO — Plan de Marketing 6 meses",
+    "subtitle": "Subgerencia de Marketing Estratégico · Propuesta a Gerencia",
+    "footer": "Acierta by CAINCO · Plan de Marketing · 2026",
+    "aspect": "16:9"
+  },
+  "theme": {
+    "ink": "1A2238",
+    "orange": "E8732A",
+    "paper": "FFFFFF",
+    "mist": "F2F4F8",
+    "line": "D9DEE7",
+    "good": "1F7A4D",
+    "bad": "B23A48",
+    "muted": "5B6577",
+    "fontHead": "Georgia, 'Times New Roman', serif",
+    "fontBody": "Segoe UI, Arial, sans-serif"
+  },
+  "slides": [
+    {
+      "type": "cover",
+      "kicker": "PLAN DE MARKETING · 6 MESES",
+      "title": "Acierta by CAINCO",
+      "subtitle": "De agencia que llena vacantes a socio de gestión de personas y de negocio",
+      "meta": "15 min exposición + 10 min debate · Panel exige datos",
+      "note": "Abro reconociendo el activo: Acierta no parte de cero, parte del respaldo de CAINCO."
+    },
+    {
+      "type": "two-columns",
+      "title": "Acierta no parte de cero: 3 fortalezas reales, 3 brechas que cuestan leads",
+      "subtitle": "Auditoría digital · evidencia mayo 2026",
+      "left": {
+        "label": "FORTALEZAS",
+        "tone": "good",
+        "items": [
+          "Respaldo CAINCO: +100 años, 4.000 asociadas, 45.8k seguidores en LinkedIn — credibilidad que ningún privado replica.",
+          "Base social ya construida: 19.752 likes en Facebook, hoy subutilizada.",
+          "Data económica propia (CEBEC) + mensajes de valor ya redactados = activo de contenido único."
+        ]
+      },
+      "right": {
+        "label": "DEBILIDADES",
+        "tone": "bad",
+        "items": [
+          "Identidad fragmentada: 2 dominios, showcase escondido, 3 WhatsApp — el lead no sabe dónde vive Acierta.",
+          "El feed es bolsa de empleos: comunica 'agencia de vacantes', invisibiliza consultoría y planificación.",
+          "Canal B2B desaprovechado: el peso está en Facebook (B2C) y solo 4 reseñas → cero prueba social corporativa."
+        ]
+      },
+      "note": "Las fortalezas ya están pagadas; las debilidades son de ejecución, no de presupuesto."
+    },
+    {
+      "type": "table",
+      "title": "Hay un cuadrante que nadie ocupa: respaldo institucional + cercanía + precio accesible",
+      "subtitle": "Mapa competitivo · 4 jugadores directos",
+      "headers": ["Competidor", "Posicionamiento", "Diferenciador", "Huella digital"],
+      "rows": [
+        ["Manpower Bolivia", "Líder global, transaccional", "Marca mundial, escala", "LinkedIn 10.3k · FB 17.5k"],
+        ["EY Bolivia", "Big Four, premium", "Metodología global, prestigio", "Marca global, web robusta"],
+        ["Exaudi", "Boutique familiar", "Foco 100% empresa familiar", "Nicho, eventos en SC"],
+        ["Heranza / Kriterio", "Boutiques locales", "Cercanía, diagnóstico gratis", "Web propia, menor escala"]
+      ],
+      "callout": {
+        "label": "EL HUECO",
+        "text": "Manpower comunica 'empleo'; Acierta debe comunicar 'empresa'. Respaldo CAINCO + red de 4.000 asociados + precio local = cuadrante vacío y defendible."
+      },
+      "note": "Nadie combina aval gremial y cercanía local: ese es nuestro terreno."
+    },
+    {
+      "type": "cards",
+      "title": "La crisis no es excusa: es el gancho de venta de los servicios olvidados",
+      "subtitle": "Contexto macro mayo 2026 · 4 insights accionables",
+      "columns": 2,
+      "cards": [
+        {"label": "M1 · Flight to value", "body": "Caja apretada sube el miedo al mal hire. Vender R&S como seguro anti-error, con ROI en bolivianos y costo evitado."},
+        {"label": "M2 · La crisis vende", "body": "Reestructuración, sucesión y planificación son MÁS necesarias en recesión. Reposicionar como 'resiliencia', no lujo."},
+        {"label": "M3 · Data como imán", "body": "Con incertidumbre cambiaria, los datos CEBEC sobre inflación/dólar son imán de leads B2B. Convertir data en marketing."},
+        {"label": "M4 · Orgánico primero", "body": "Divisas escasas → owned-media (LinkedIn, webinars, base CAINCO) y mínima pauta en USD. El plan se ve barato y medible."}
+      ],
+      "facts": ["Inflación 20,4% → meta 14-15%", "Dólar Bs 11 → 9,6", "PIB 2026 -3,2%"],
+      "note": "Tres datos macro que reconvierto en argumento de venta, no en queja."
+    },
+    {
+      "type": "statement",
+      "title": "Arquitectura de marca: Acierta gana identidad propia sin perder el aval de CAINCO",
+      "subtitle": "Modelo endorsed brand",
+      "quote": "El conocimiento del tejido empresarial de CAINCO, puesto a trabajar dentro de tu empresa.",
+      "shift": {"from": "Agencia que llena vacantes", "to": "Socio de gestión de personas y de negocio"},
+      "extra": "Firma siempre 'Acierta, by CAINCO'. CAINCO = aval de confianza; Acierta = especialista ágil y cercano. Líneas: Acierta Consultoría · Acierta Inteligencia Económica.",
+      "note": "Diferenciación sin orfandad institucional: ese es el equilibrio."
+    },
+    {
+      "type": "objectives",
+      "title": "Dos objetivos SMART, con un baseline honesto: hoy hay 0 métricas",
+      "subtitle": "El primer logro es poder medir",
+      "items": [
+        {
+          "tag": "SMART 1",
+          "name": "Diversificar ingresos más allá del core",
+          "goal": "Llevar las líneas no-core (Familiares, Planificación, Asesoría Económica) a 25% de los leads calificados en 6 meses.",
+          "kpis": ["% leads no-core / total", "nº leads por línea", "nº inscritos por webinar"]
+        },
+        {
+          "tag": "SMART 2",
+          "name": "Construir el sistema de medición inexistente",
+          "goal": "Implementar embudo medible (lead→SQL→cierre) y reportar CAC, conversión y ROI mensual desde el mes 2, con tablero para Gerencia.",
+          "kpis": ["CAC por servicio", "tasa lead→cierre", "ROI por campaña"]
+        }
+      ],
+      "note": "No maquillo números que no existen: el Objetivo 2 es justamente construirlos."
+    },
+    {
+      "type": "cards",
+      "title": "Estrategia de contenidos en LinkedIn: 4 pilares con mensaje segmentado",
+      "subtitle": "Canal B2B principal · 3-4 posts/semana, regla 4-1-1",
+      "columns": 2,
+      "cards": [
+        {"label": "P1 · Inteligencia económica", "body": "Data CEBEC, inflación/dólar/sector → autoridad e imán de decisores. 1/sem."},
+        {"label": "P2 · Gestión de personas", "body": "Tips de selección, costo de mala contratación, cultura. Utilidad. 1/sem."},
+        {"label": "P3 · Empresa familiar & estrategia", "body": "Sucesión, gobierno, casos. Nicho premium. 1 cada 2 sem."},
+        {"label": "P4 · Prueba social & marca", "body": "Casos de éxito, testimonios, equipo, CTA. Conversión. 1 cada 2 sem."}
+      ],
+      "facts": ["PYME/familiar → continuidad y orden", "Corporativo → talento y velocidad", "C-level → decidir mejor", "RRHH → evaluaciones y outplacement"],
+      "note": "Cada pilar habla a un dolor distinto: no es contenido genérico."
+    },
+    {
+      "type": "cards",
+      "title": "Tres quick wins de los primeros 60 días, casi sin presupuesto",
+      "subtitle": "Impacto rápido con activos que ya existen",
+      "columns": 3,
+      "cards": [
+        {"label": "QW1 · Unificar identidad", "body": "1 landing, 1 WhatsApp Business, bios consistentes 'Acierta by CAINCO'. Claridad + medición a costo casi cero."},
+        {"label": "QW2 · Pulso Económico", "body": "1 reporte/webinar mensual con data CEBEC sobre dólar/inflación → captura leads B2B con un activo que ya existe."},
+        {"label": "QW3 · Activar prueba social", "body": "Campaña de testimonios + reseñas (hoy solo 4) + 3 mini-casos en LinkedIn. Reputación convertida en venta."}
+      ],
+      "note": "Empiezo por lo que no cuesta divisas y se nota en semanas."
+    },
+    {
+      "type": "timeline",
+      "title": "Roadmap de 6 meses: del orden inicial a la medición de ROI",
+      "subtitle": "Hitos mes a mes",
+      "steps": [
+        {"when": "M1", "what": "Diagnóstico + unificación de identidad + setup CRM/UTMs (QW1)."},
+        {"when": "M2", "what": "Lanzamiento Pulso Económico + parrilla LinkedIn + 1er dashboard (QW2)."},
+        {"when": "M3", "what": "Campaña testimonios/casos + landings por servicio (QW3)."},
+        {"when": "M4", "what": "Campaña foco no-core #1 (Empresa Familiar) + webinar."},
+        {"when": "M5", "what": "Campaña foco no-core #2 (Planificación 'resiliencia') + nurturing."},
+        {"when": "M6", "what": "Medición, optimización y reporte semestral con CAC/conversión/ROI."}
+      ],
+      "note": "Cada mes deja un entregable medible sobre la mesa de Gerencia."
+    },
+    {
+      "type": "numbered",
+      "title": "Cómo sabrá Gerencia que funcionó: 3 criterios y un reporte mensual",
+      "subtitle": "Criterios de éxito a 6 meses",
+      "items": [
+        {"n": "1", "head": "Diversificación", "body": "≥25% de leads calificados provienen de líneas no-core, reduciendo la dependencia del R&S."},
+        {"n": "2", "head": "Sistema medible operando", "body": "CAC, conversión y ROI reportados cada mes (hoy: 0 métricas)."},
+        {"n": "3", "head": "Eficiencia en crisis", "body": "Costo por lead a la baja mes a mes, con marketing mayoritariamente orgánico."}
+      ],
+      "note": "Cierro con la promesa concreta: un tablero mensual, no promesas vagas."
+    }
+  ]
+}
