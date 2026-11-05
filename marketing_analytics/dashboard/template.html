@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard de Marketing — RRSS</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+__CSS_DASHBOARD__
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Dashboard de Marketing — RRSS</h1>
+    <p id="generado-en"></p>
+  </div>
+  <button id="toggle-tema" type="button">Cambiar tema</button>
+</header>
+
+<main>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="f-desde">Fecha desde</label>
+      <input type="date" id="f-desde" />
+    </div>
+    <div class="campo">
+      <label for="f-hasta">Fecha hasta</label>
+      <input type="date" id="f-hasta" />
+    </div>
+    <div class="campo">
+      <label for="f-perfil">Perfil</label>
+      <select id="f-perfil"></select>
+    </div>
+    <div class="campo">
+      <label for="f-red">Red</label>
+      <select id="f-red"></select>
+    </div>
+    <div class="campo">
+      <label for="f-tipo">Tipo de publicación</label>
+      <select id="f-tipo"></select>
+    </div>
+    <div class="campo">
+      <label for="f-cuenta">Cuenta publicitaria</label>
+      <select id="f-cuenta"></select>
+    </div>
+    <div class="campo">
+      <label for="f-campana">Campaña</label>
+      <select id="f-campana"></select>
+    </div>
+    <button id="limpiar-filtros" type="button">Limpiar filtros</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section class="panel">
+    <h2>Comparativo Meta vs LinkedIn</h2>
+    <p class="subtitulo">Interacciones totales de contenido orgánico, por red.</p>
+    <div id="chart-comparativo" style="height:320px;"></div>
+    <div class="nota-pendiente" id="nota-linkedin"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Evolución</h2>
+    <p class="subtitulo">Elegí una métrica y una granularidad — el gráfico se redibuja al vuelo.</p>
+    <div class="controles-panel">
+      <select id="evo-metrica"></select>
+      <select id="evo-granularidad">
+        <option value="dia">Diaria</option>
+        <option value="semana">Semanal</option>
+        <option value="mes">Mensual</option>
+      </select>
+    </div>
+    <div id="chart-evolucion" style="height:360px;"></div>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel">
+      <h2>Top publicaciones</h2>
+      <p class="subtitulo">Top 10 por interacciones totales (orgánico).</p>
+      <div id="chart-top-publicaciones" style="height:320px;"></div>
+    </section>
+    <section class="panel">
+      <h2>Top campañas</h2>
+      <p class="subtitulo">Top 10 por resultados (pauta).</p>
+      <div id="chart-top-campanas" style="height:320px;"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Top perfiles</h2>
+    <p class="subtitulo">Top 10 perfiles orgánicos por interacciones totales acumuladas.</p>
+    <div id="chart-top-perfiles" style="height:320px;"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Detalle de publicaciones</h2>
+    <p class="subtitulo">Se actualiza junto con los filtros de arriba.</p>
+    <div id="tabla-detalle-organico"></div>
+  </section>
+
+</main>
+
+<footer>Generado automáticamente por la Skill "Actualizar Reporte RRSS".</footer>
+
+<script>
+__JS_DASHBOARD__
+</script>
+</body>
+</html>

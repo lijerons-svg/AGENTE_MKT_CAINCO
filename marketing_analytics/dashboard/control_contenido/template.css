@@ -1,0 +1,762 @@
+/* Sistema de diseño del tablero ejecutivo.
+   Criterio: sobrio y con aire. El color se reserva para tres cosas — la
+   identidad institucional de CAINCO, la identidad de cada plataforma y el
+   signo de una variación (mejor/peor) — nunca para decorar. Las cajas se
+   usan solo cuando agrupan de verdad; el resto se separa con espacio y
+   jerarquía tipográfica. */
+:root {
+  color-scheme: light;
+  --surface-1: #ffffff;
+  --surface-2: #fafafb;
+  --page: #f6f6f7;
+  --text-primary: #0b0b0f;
+  --text-secondary: #55565f;
+  --text-muted: #8a8b93;
+  --gridline: #ececef;
+  --border: rgba(11,11,15,0.07);
+  --border-fuerte: rgba(11,11,15,0.13);
+  /* Paleta institucional de CAINCO (tomada del tablero interno previo):
+     el azul es el color de marca y por eso es el acento del tablero, no un
+     azul genérico. Cian, naranja y verde solo aparecen como series de
+     gráfico, para que dos datos en un mismo gráfico se distingan. */
+  --cainco-azul: #003a70;
+  --cainco-azul-claro: #0a5aa0;
+  --cainco-cian: #00a4c4;
+  --cainco-naranja: #ff8c1a;
+  --cainco-verde: #2fa84f;
+  --accent: #003a70;
+  --accent-2: #0a5aa0;
+  --accent-suave: rgba(0,58,112,0.09);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(15,15,20,0.04);
+  --shadow-md: 0 6px 20px rgba(15,15,20,0.07);
+  /* Escala de espaciado: todo el layout usa estos pasos, no valores sueltos. */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+  --estado-pendiente: #8a8b93;
+  --estado-en_produccion: #eb6834;
+  --estado-aprobado: #d6a92a;
+  --estado-programado: #0a5aa0;
+  --estado-publicado: #1baf7a;
+  --estado-cancelado: #e34948;
+  --plataforma-facebook: #1877f2;
+  --plataforma-instagram: #c13584;
+  --plataforma-linkedin: #0a66c2;
+  --plataforma-mailchimp: #f5c400;
+  --plataforma-tiktok: #010101;
+  --plataforma-otro: #8a8b93;
+  /* Paleta específica del calendario (tonos más suaves): muchas tarjetas
+     chicas juntas con colores de marca "duros" compiten entre sí. */
+  --calendario-facebook: #7cc3ea;
+  --calendario-instagram: #e6a0cc;
+  --calendario-linkedin: #b7b8c0;
+  --calendario-mailchimp: #f2df7a;
+  --calendario-tiktok: #b0b0b0;
+  --calendario-otro: #c2c3ca;
+  --salud-verde: #1baf7a;
+  --salud-amarillo: #d6a92a;
+  --salud-rojo: #e34948;
+  --mejor: #1baf7a;
+  --peor: #e34948;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a1d;
+  --surface-2: #202024;
+  --page: #0f0f11;
+  --text-primary: #f5f5f7;
+  --text-secondary: #c3c3ca;
+  --text-muted: #8a8b93;
+  --gridline: #2a2a2e;
+  --border: rgba(255,255,255,0.08);
+  --border-fuerte: rgba(255,255,255,0.16);
+  /* El azul institucional #003a70 no llega al contraste mínimo sobre fondo
+     oscuro: en tema oscuro se usa una versión aclarada de la misma familia. */
+  --accent: #4b9fd5;
+  --accent-2: #6fb6e3;
+  --accent-suave: rgba(75,159,213,0.16);
+  --cainco-azul: #4b9fd5;
+  --cainco-azul-claro: #6fb6e3;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-md: 0 6px 20px rgba(0,0,0,0.45);
+  --plataforma-tiktok: #4a4a50;
+  --plataforma-mailchimp: #ffe01b;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-1: #1a1a1d;
+    --surface-2: #202024;
+    --page: #0f0f11;
+    --text-primary: #f5f5f7;
+    --text-secondary: #c3c3ca;
+    --text-muted: #8a8b93;
+    --gridline: #2a2a2e;
+    --border: rgba(255,255,255,0.08);
+    --border-fuerte: rgba(255,255,255,0.16);
+    --accent: #4b9fd5;
+    --accent-2: #6fb6e3;
+    --accent-suave: rgba(75,159,213,0.16);
+    --cainco-azul: #4b9fd5;
+    --cainco-azul-claro: #6fb6e3;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+    --shadow-md: 0 6px 20px rgba(0,0,0,0.45);
+    --plataforma-tiktok: #4a4a50;
+    --plataforma-mailchimp: #ffe01b;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* ---------- cabecera y navegación ---------- */
+.sticky-top {
+  position: sticky; top: 0; z-index: 40; background: var(--page);
+  padding: 0 clamp(16px, 4vw, 56px); max-width: 1520px; margin: 0 auto;
+  box-shadow: 0 1px 0 var(--border);
+}
+/* Bloque de marca: gradiente del azul institucional. Es lo primero que se
+   ve y lo que hace que el tablero se lea como una herramienta de CAINCO y
+   no como un informe genérico. */
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: var(--sp-4);
+  background: linear-gradient(105deg, var(--cainco-azul), var(--cainco-azul-claro));
+  color: #fff; border-radius: var(--radius-lg);
+  padding: var(--sp-5) var(--sp-6); margin: var(--sp-4) 0 var(--sp-4);
+  box-shadow: 0 6px 22px rgba(0,58,112,.16);
+}
+header h1 { margin: 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; }
+header p { margin: var(--sp-1) 0 0; color: rgba(255,255,255,.82); font-size: 0.82rem; }
+.header-badge {
+  display: inline-block; background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.32); padding: 3px 12px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 620; margin-top: var(--sp-3);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+#toggle-tema {
+  border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1); color: #fff;
+  border-radius: var(--radius-sm); padding: 7px 13px; cursor: pointer; font-size: 0.82rem;
+  transition: background .15s ease;
+}
+#toggle-tema:hover { background: rgba(255,255,255,.2); }
+main { padding: var(--sp-5) clamp(16px, 4vw, 56px) var(--sp-8); max-width: 1520px; margin: 0 auto; }
+
+.tabs { display: flex; gap: var(--sp-1); border-bottom: 1px solid var(--border); }
+.tab-btn {
+  border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+  padding: 10px 14px; font-size: 0.88rem; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: color .15s ease;
+}
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.activo { color: var(--text-primary); border-bottom-color: var(--accent); font-weight: 620; }
+.tab-panel { display: none; }
+.tab-panel.activo { display: block; }
+
+/* Sub-pestañas dentro de una pestaña (Análisis: Orgánico/Pauta) — mismo
+   lenguaje visual que las principales pero más chicas, para que se note
+   que son un nivel de navegación distinto. */
+.subtabs { display: flex; gap: var(--sp-1); border-bottom: 1px solid var(--border); margin-bottom: var(--sp-5); }
+.subtab-btn {
+  border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+  padding: 8px 12px; font-size: 0.86rem; font-weight: 600; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: color .15s ease;
+}
+.subtab-btn:hover { color: var(--text-primary); }
+.subtab-btn.activo { color: var(--accent); border-bottom-color: var(--accent); }
+.subtab-panel { display: none; }
+.subtab-panel.activo { display: block; }
+
+/* ---------- barra de filtros: una sola línea, sin caja ---------- */
+.barra-filtros {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-5);
+  padding: var(--sp-3) 0; border-bottom: 1px solid var(--border);
+}
+.barra-filtros.sticky-filtros { background: var(--page); }
+.grupo-filtro { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.grupo-filtro > label {
+  font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .05em; font-weight: 620; white-space: nowrap;
+}
+.chips-filtro { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-filtro {
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-secondary);
+  border-radius: 999px; padding: 4px 12px; font-size: 0.78rem; cursor: pointer;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+  white-space: nowrap;
+}
+.chip-filtro:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.chip-filtro.activo { background: var(--text-primary); border-color: var(--text-primary); color: var(--surface-1); font-weight: 600; }
+.chip-filtro.chip-todos.activo { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ---------- dropdown multiselección ---------- */
+.dropdown-multi { position: relative; display: inline-block; }
+.dropdown-boton {
+  display: inline-flex; align-items: center; gap: var(--sp-3); cursor: pointer;
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-secondary);
+  border-radius: var(--radius-sm); padding: 6px 11px; font-size: 0.81rem;
+  min-width: 130px; justify-content: space-between; white-space: nowrap;
+}
+.dropdown-boton:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.dropdown-boton.con-seleccion { border-color: var(--accent); color: var(--text-primary); font-weight: 560; }
+.dropdown-flecha { color: var(--text-muted); font-size: 0.7rem; }
+.dropdown-panel {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+  background: var(--surface-1); border: 1px solid var(--border-fuerte);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 6px;
+  min-width: 170px; max-height: 280px; overflow-y: auto;
+}
+.dropdown-panel.visible { display: block; }
+.dropdown-opcion {
+  display: flex; align-items: center; gap: var(--sp-2); padding: 6px 9px;
+  border-radius: var(--radius-sm); cursor: pointer; font-size: 0.83rem; color: var(--text-secondary);
+}
+.dropdown-opcion:hover { background: var(--surface-2); color: var(--text-primary); }
+.dropdown-opcion.activa { color: var(--text-primary); font-weight: 560; }
+.dropdown-opcion input { accent-color: var(--accent); cursor: pointer; margin: 0; }
+
+/* ---------- semáforo de indicadores ----------
+   Verde/amarillo/rojo contra referencias de industria, no contra el propio
+   dato: la idea es saber si el número es bueno en términos absolutos. */
+.celda-nivel { display: inline-flex; align-items: center; gap: 5px; justify-content: flex-end; }
+.celda-nivel::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.celda-nivel.bueno { color: var(--salud-verde); font-weight: 620; }
+.celda-nivel.bueno::before { background: var(--salud-verde); }
+.celda-nivel.medio { color: var(--salud-amarillo); font-weight: 560; }
+.celda-nivel.medio::before { background: var(--salud-amarillo); }
+.celda-nivel.malo { color: var(--salud-rojo); font-weight: 620; }
+.celda-nivel.malo::before { background: var(--salud-rojo); }
+.celda-nivel.neutro::before { background: var(--text-muted); opacity: .35; }
+
+/* ---------- jerarquía de secciones ----------
+   Nivel 1: título de bloque (h2 suelto, sin caja).
+   Nivel 2: panel con borde. Nivel 3: detalle colapsable. */
+.seccion { margin-top: var(--sp-7); }
+.seccion:first-child { margin-top: var(--sp-5); }
+.seccion-cabecera { margin-bottom: var(--sp-4); }
+.seccion-cabecera h2 {
+  margin: 0 0 var(--sp-2); font-size: 0.94rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--accent);
+  padding-bottom: var(--sp-2); border-bottom: 2px solid var(--gridline);
+}
+.titulo-con-icono { display: flex; align-items: center; gap: var(--sp-3); }
+.seccion-cabecera p { margin: var(--sp-1) 0 0; font-size: 0.84rem; color: var(--text-muted); max-width: 78ch; }
+.sub-cabecera {
+  display: flex; align-items: baseline; gap: var(--sp-2);
+  margin: var(--sp-5) 0 var(--sp-3);
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text-muted); font-weight: 660;
+}
+.sub-cabecera::after { content: ''; flex: 1; height: 1px; background: var(--gridline); }
+
+section.panel {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--sp-5); margin-bottom: var(--sp-5);
+}
+section.panel h2 { margin: 0 0 var(--sp-1); font-size: 0.98rem; font-weight: 680; }
+section.panel .subtitulo { margin: 0 0 var(--sp-4); font-size: 0.81rem; color: var(--text-muted); max-width: 80ch; }
+.panel-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-4); flex-wrap: wrap; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.grid-2-desigual { display: grid; grid-template-columns: 1.35fr 1fr; gap: var(--sp-5); }
+@media (max-width: 1000px) { .grid-2, .grid-2-desigual { grid-template-columns: 1fr; } }
+
+/* Altura de los contenedores de gráficos Plotly. Se define por clase (no
+   inline) para poder bajarla en celular sin tocar el HTML ni el JS: Plotly
+   la toma como el alto real del contenedor gracias a responsive:true. */
+.grafico-alto { height: 340px; }
+.grafico-medio { height: 320px; }
+
+/* ---------- KPIs ----------
+   Tres pesos: hero (la lectura de 5 segundos), normal y compacto. */
+.kpis {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--sp-3); margin-bottom: var(--sp-5);
+}
+.kpis-2filas { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+.kpi {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  display: flex; flex-direction: column; gap: 2px;
+  transition: border-color .15s ease;
+}
+.kpi:hover { border-color: var(--border-fuerte); }
+.kpi .etiqueta {
+  display: flex; align-items: center; gap: 5px; font-size: 0.7rem;
+  color: var(--text-secondary); font-weight: 640;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.kpi .valor {
+  font-size: 1.75rem; font-weight: 750; letter-spacing: -0.025em; color: var(--accent);
+  font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 3px;
+}
+.kpi .valor.chico { font-size: 1.05rem; }
+.kpi .valor.nivel-bueno { color: var(--salud-verde); }
+.kpi .valor.nivel-medio { color: var(--salud-amarillo); }
+.kpi .valor.nivel-malo { color: var(--salud-rojo); }
+.kpi .nota { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
+.kpi .delta {
+  display: inline-flex; align-items: center; gap: 3px; font-size: 0.75rem;
+  font-weight: 640; font-variant-numeric: tabular-nums; margin-top: 4px;
+}
+.kpi { position: relative; }
+.btn-info {
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-muted);
+  border-radius: 50%; width: 15px; height: 15px; padding: 0; margin-left: 4px; cursor: pointer;
+  font-size: 0.62rem; font-weight: 700; line-height: 1; display: inline-flex;
+  align-items: center; justify-content: center; flex: 0 0 auto;
+}
+.btn-info:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.btn-mover {
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-muted);
+  border-radius: 4px; width: 15px; height: 15px; padding: 0; margin-left: 4px; cursor: pointer;
+  font-size: 0.7rem; font-weight: 700; line-height: 1; display: inline-flex;
+  align-items: center; justify-content: center; flex: 0 0 auto;
+}
+.btn-mover:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.popover {
+  display: none; position: absolute; top: 34px; left: var(--sp-4); right: var(--sp-4);
+  z-index: 30; background: var(--surface-1); border: 1px solid var(--border-fuerte);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--sp-3) var(--sp-4);
+  font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary); font-weight: 400;
+  min-width: 240px; text-transform: none; letter-spacing: 0;
+}
+.popover.visible { display: block; }
+.popover strong { color: var(--text-primary); }
+.popover code {
+  display: block; margin: var(--sp-2) 0; padding: 6px 8px; background: var(--page);
+  border-radius: var(--radius-sm); font-size: 0.76rem; color: var(--text-primary);
+}
+
+.kpi .delta.mejor { color: var(--mejor); }
+.kpi .delta.peor { color: var(--peor); }
+.kpi .delta.neutro { color: var(--text-muted); }
+/* Franja de color de plataforma: 3px a la izquierda, no un borde superior
+   grueso — identifica sin gritar. */
+.kpi.facebook { box-shadow: inset 3px 0 0 var(--plataforma-facebook); }
+.kpi.instagram { box-shadow: inset 3px 0 0 var(--plataforma-instagram); }
+.kpi.linkedin { box-shadow: inset 3px 0 0 var(--plataforma-linkedin); }
+.kpi.mailchimp { box-shadow: inset 3px 0 0 var(--plataforma-mailchimp); }
+.kpi.tiktok { box-shadow: inset 3px 0 0 var(--plataforma-tiktok); }
+
+/* Las 5 tarjetas del Resumen tienen que entrar siempre en un solo renglón
+   en pantallas de escritorio — auto-fit con un mínimo grande las mandaba a
+   dos filas en laptops comunes. Recién en pantallas angostas de verdad se
+   permite que se acomoden solas. */
+.kpis-hero { grid-template-columns: repeat(5, 1fr); gap: var(--sp-4); }
+@media (max-width: 1000px) { .kpis-hero { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
+.kpis-hero .kpi { padding: var(--sp-5); }
+.kpis-hero .kpi .valor { font-size: 2.3rem; }
+.kpis-hero .kpi .etiqueta { font-size: 0.79rem; }
+
+/* Health Score: la única tarjeta con tratamiento propio, porque es la
+   respuesta a "¿cómo estamos?" y debe leerse antes que todo lo demás. */
+.health-score {
+  display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--sp-5) var(--sp-6); margin-bottom: var(--sp-4);
+}
+.health-aro { position: relative; width: 108px; height: 108px; flex: 0 0 auto; }
+/* width/height: 100% (el svg trae viewBox) para que el aro escale con el
+   contenedor en vez de quedarse en 108px fijos cuando .health-aro se achica
+   en celular. */
+.health-aro svg { transform: rotate(-90deg); display: block; width: 100%; height: 100%; }
+.health-aro .health-num {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0;
+}
+.health-aro .health-num strong { font-size: 1.85rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.health-aro .health-num span { font-size: 0.65rem; color: var(--text-muted); }
+.health-texto { flex: 1; min-width: 260px; }
+.health-texto h2 { margin: 0 0 var(--sp-1); font-size: 1.05rem; font-weight: 660; }
+.health-texto p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+.health-desglose { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin-top: var(--sp-3); }
+.health-desglose div { font-size: 0.76rem; color: var(--text-muted); }
+.health-desglose strong { display: block; font-size: 0.95rem; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+/* ---------- iconos de plataforma: protagonistas ---------- */
+.icono-plataforma { display: inline-flex; align-items: center; vertical-align: middle; }
+.icono-plataforma svg, .icono-plataforma img { display: block; width: 18px; height: 18px; }
+.icono-plataforma.chico svg, .icono-plataforma.chico img { width: 13px; height: 13px; }
+.icono-plataforma.grande svg, .icono-plataforma.grande img { width: 40px; height: 40px; }
+.icono-plataforma.xl svg, .icono-plataforma.xl img { width: 52px; height: 52px; }
+
+/* ---------- tarjetas de perfil ---------- */
+.grid-perfiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-4); }
+.card-perfil {
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--sp-5); background: var(--surface-1);
+  transition: border-color .15s ease;
+}
+.card-perfil:hover { border-color: var(--border-fuerte); }
+.card-perfil.facebook { box-shadow: inset 0 3px 0 var(--plataforma-facebook); }
+.card-perfil.instagram { box-shadow: inset 0 3px 0 var(--plataforma-instagram); }
+.card-perfil.linkedin { box-shadow: inset 0 3px 0 var(--plataforma-linkedin); }
+.card-perfil.mailchimp { box-shadow: inset 0 3px 0 var(--plataforma-mailchimp); }
+.card-perfil.tiktok { box-shadow: inset 0 3px 0 var(--plataforma-tiktok); }
+.card-perfil-cabecera { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.card-perfil-cabecera strong { display: block; font-size: 1rem; font-weight: 640; line-height: 1.25; }
+.card-perfil-cabecera .nota { font-size: 0.74rem; color: var(--text-muted); }
+.card-perfil-stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-4); }
+.card-perfil-stats > div { display: flex; flex-direction: column; gap: 1px; }
+.card-perfil-stats span { font-size: 0.71rem; color: var(--text-muted); }
+.card-perfil-stats strong { font-size: 1.05rem; font-weight: 640; font-variant-numeric: tabular-nums; }
+
+/* ---------- insights ---------- */
+.lista-insights { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lista-insights li {
+  padding: var(--sp-3) 0; font-size: 0.89rem; line-height: 1.5;
+  border-bottom: 1px solid var(--gridline); display: flex; gap: var(--sp-3); align-items: flex-start;
+}
+.lista-insights li:last-child { border-bottom: none; }
+.lista-insights .marca {
+  flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; margin-top: 8px;
+  background: var(--accent);
+}
+.lista-insights .marca.mejor { background: var(--mejor); }
+.lista-insights .marca.peor { background: var(--peor); }
+.lista-insights strong { font-weight: 640; }
+
+/* ---------- rankings ---------- */
+.ranking { display: flex; flex-direction: column; }
+.ranking-item {
+  display: grid; grid-template-columns: 22px 1fr auto; align-items: center;
+  gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: 1px solid var(--gridline);
+}
+.ranking-item:last-child { border-bottom: none; }
+.ranking-pos { font-size: 0.78rem; color: var(--text-muted); font-variant-numeric: tabular-nums; font-weight: 620; }
+.ranking-cuerpo { min-width: 0; }
+.ranking-nombre {
+  display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 580;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ranking-meta { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+.ranking-valor { font-size: 0.95rem; font-weight: 660; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.ranking-valor small { display: block; font-size: 0.7rem; font-weight: 500; color: var(--text-muted); }
+.ranking-barra { height: 4px; border-radius: 2px; background: var(--gridline); margin-top: 6px; overflow: hidden; }
+.ranking-barra i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+
+/* ---------- salud de perfiles ---------- */
+.badge-salud {
+  display: inline-flex; align-items: center; padding: 2px 10px 2px 7px; border-radius: 999px;
+  font-size: 0.74rem; font-weight: 620; white-space: nowrap;
+}
+.badge-salud.verde { background: color-mix(in srgb, var(--salud-verde) 15%, transparent); color: var(--salud-verde); }
+.badge-salud.amarillo { background: color-mix(in srgb, var(--salud-amarillo) 18%, transparent); color: var(--salud-amarillo); }
+.badge-salud.rojo { background: color-mix(in srgb, var(--salud-rojo) 15%, transparent); color: var(--salud-rojo); }
+.punto-salud { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+.punto-salud.verde { background: var(--salud-verde); }
+.punto-salud.amarillo { background: var(--salud-amarillo); }
+.punto-salud.rojo { background: var(--salud-rojo); }
+
+/* ---------- pill de red ----------
+   En una tabla con muchas filas, el nombre de la red en texto plano se
+   pierde; con fondo de marca se distingue de un vistazo. */
+.pill {
+  display: inline-block; font-size: 0.7rem; padding: 2px 9px; border-radius: 999px;
+  font-weight: 640; white-space: nowrap;
+}
+.pill.facebook { background: color-mix(in srgb, var(--plataforma-facebook) 13%, transparent); color: var(--plataforma-facebook); }
+.pill.instagram { background: color-mix(in srgb, var(--plataforma-instagram) 13%, transparent); color: var(--plataforma-instagram); }
+.pill.linkedin { background: color-mix(in srgb, var(--plataforma-linkedin) 13%, transparent); color: var(--plataforma-linkedin); }
+.pill.mailchimp { background: color-mix(in srgb, var(--plataforma-mailchimp) 22%, transparent); color: #8a6d00; }
+.pill.tiktok { background: color-mix(in srgb, var(--text-primary) 10%, transparent); color: var(--text-primary); }
+.pill.otro { background: color-mix(in srgb, var(--text-muted) 15%, transparent); color: var(--text-muted); }
+
+/* ---------- aviso de alcance ----------
+   Para las limitaciones que hay que leer antes de sacar conclusiones (un
+   dato que Meta ya no informa, una métrica que es convención del tablero).
+   Van a la vista, no escondidas en un popover. */
+.aviso {
+  background: color-mix(in srgb, var(--cainco-naranja) 9%, var(--surface-1));
+  border-left: 4px solid var(--cainco-naranja);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--sp-3) var(--sp-4); font-size: 0.82rem; line-height: 1.5;
+  color: var(--text-secondary); margin-bottom: var(--sp-5);
+}
+.aviso strong { color: var(--text-primary); }
+.aviso.info {
+  background: var(--accent-suave); border-left-color: var(--accent-2);
+}
+
+/* ---------- tablas ---------- */
+.tabla-scroll { overflow-x: auto; max-width: 100%; }
+table.tabla { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+table.tabla th, table.tabla td {
+  text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--gridline);
+  white-space: nowrap;
+}
+table.tabla thead th {
+  color: var(--text-muted); font-weight: 620; font-size: 0.71rem;
+  text-transform: uppercase; letter-spacing: .05em;
+  position: sticky; top: 0; background: var(--surface-1); z-index: 1;
+}
+/* El popover genérico (.popover, en template.css de los KPIs) usa
+   left/right fijos pensados para una tarjeta ancha — dentro de un <th>
+   angosto eso lo aplastaría a unos pocos px. Acá se ancla a la izquierda
+   con un ancho propio en vez de estirarse al ancho de la columna. */
+table.tabla th .popover { left: 0; right: auto; top: 24px; width: 230px; text-transform: none; letter-spacing: 0; }
+table.tabla th .btn-info { text-transform: none; }
+table.tabla th .menu-columna { width: 170px; padding: 6px; }
+table.tabla th .menu-columna button {
+  display: block; width: 100%; text-align: left; background: transparent; border: none;
+  padding: 7px 8px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 400;
+  color: var(--text-primary); cursor: pointer;
+}
+table.tabla th .menu-columna button:hover { background: var(--page); }
+table.tabla th.ordenable { cursor: pointer; user-select: none; }
+table.tabla th.ordenable:hover { color: var(--text-primary); }
+table.tabla th.ordenable::after { content: '↕'; opacity: .3; margin-left: 5px; font-size: 0.85em; }
+table.tabla th.ordenable.asc::after { content: '↑'; opacity: 1; }
+table.tabla th.ordenable.desc::after { content: '↓'; opacity: 1; }
+table.tabla td.num { font-variant-numeric: tabular-nums; text-align: right; }
+table.tabla tbody tr:hover { background: var(--surface-2); }
+table.tabla td.texto-largo {
+  max-width: 320px; overflow: hidden; text-overflow: ellipsis; cursor: help;
+}
+/* Tabla de "Detalle de campañas" (Análisis): tiene muchas columnas, así que
+   va más apretada para entrar en pantalla sin barra de desplazamiento. */
+table.tabla.tabla-compacta th, table.tabla.tabla-compacta td { padding: 6px 4px; font-size: 0.74rem; }
+table.tabla.tabla-compacta td.texto-largo { max-width: 150px; }
+table.tabla.tabla-compacta .pill { padding: 1px 6px; font-size: 0.7rem; }
+/* Con 14 columnas, cada botón de encabezado (info + mover) suma rápido —
+   un poco más chicos y pegados al texto para no volver a necesitar scroll. */
+table.tabla.tabla-compacta th .btn-info, table.tabla.tabla-compacta th .btn-mover {
+  width: 12px; height: 12px; font-size: 0.58rem; margin-left: 2px;
+}
+.tabla-pie {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3);
+  padding-top: var(--sp-3); font-size: 0.79rem; color: var(--text-muted); flex-wrap: wrap;
+}
+.tabla-pie .paginador { display: flex; align-items: center; gap: var(--sp-2); }
+.tabla-pie button {
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-secondary);
+  border-radius: var(--radius-sm); padding: 4px 10px; cursor: pointer; font-size: 0.79rem;
+}
+.tabla-pie button:disabled { opacity: .4; cursor: default; }
+.tabla-pie button:not(:disabled):hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+.barra-tabla {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center;
+  margin-bottom: var(--sp-3);
+}
+.buscador {
+  flex: 1 1 220px; max-width: 320px; border: 1px solid var(--border-fuerte);
+  border-radius: var(--radius-sm); padding: 7px 11px; background: transparent;
+  color: var(--text-primary); font-size: 0.84rem;
+}
+.buscador:focus { outline: 2px solid var(--accent-suave); border-color: var(--accent); }
+.select-filtro {
+  border: 1px solid var(--border-fuerte); border-radius: var(--radius-sm);
+  padding: 6px 10px; background: transparent; color: var(--text-secondary); font-size: 0.81rem;
+}
+
+details.detalle-tabla > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center;
+  justify-content: space-between; gap: var(--sp-3);
+}
+details.detalle-tabla > summary::-webkit-details-marker { display: none; }
+details.detalle-tabla > summary h2 { margin: 0; }
+details.detalle-tabla > summary::after {
+  content: 'Ver detalle ▾'; font-size: 0.78rem; font-weight: 540; color: var(--text-muted); white-space: nowrap;
+}
+details.detalle-tabla[open] > summary::after { content: 'Ocultar ▴'; }
+details.detalle-tabla .detalle-contenido { margin-top: var(--sp-4); }
+
+/* ---------- heatmap ---------- */
+.heatmap { display: grid; gap: 3px; font-size: 0.7rem; }
+.heatmap-celda {
+  aspect-ratio: 1 / 1; border-radius: 4px; display: flex; align-items: center;
+  justify-content: center; font-variant-numeric: tabular-nums; color: var(--text-primary);
+  min-height: 26px;
+}
+.heatmap-eje { color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 0.68rem; }
+.heatmap-eje.fila { justify-content: flex-end; padding-right: 6px; white-space: nowrap; }
+.heatmap-leyenda { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); font-size: 0.72rem; color: var(--text-muted); }
+.heatmap-leyenda i { width: 18px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* ---------- calendario ---------- */
+.leyenda-calendario { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.leyenda-calendario button {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-secondary);
+  border-radius: 999px; padding: 4px 12px; font-size: 0.78rem;
+  transition: color .12s ease, border-color .12s ease, opacity .12s ease;
+}
+.leyenda-calendario button:hover { color: var(--text-primary); }
+.leyenda-calendario button.inactivo { opacity: .4; }
+.leyenda-calendario button.inactivo i { background: var(--text-muted) !important; }
+.leyenda-calendario i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.calendario-controles { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.calendario-controles button {
+  border: 1px solid var(--border-fuerte); background: transparent; color: var(--text-primary);
+  border-radius: var(--radius-sm); padding: 4px 11px; cursor: pointer; line-height: 1.4;
+}
+.calendario-controles button:hover { border-color: var(--text-muted); }
+.calendario-mes-actual { font-weight: 620; min-width: 160px; text-align: center; font-size: 0.92rem; }
+.calendario-scroll { overflow-x: auto; border: 1px solid var(--gridline); border-radius: var(--radius-md); }
+.calendario-grilla {
+  display: grid; grid-template-columns: repeat(7, minmax(118px, 1fr)); gap: 1px;
+  background: var(--gridline); min-width: 830px;
+}
+.calendario-dia-nombre {
+  background: var(--surface-1); color: var(--text-muted); font-size: 0.69rem;
+  text-align: center; padding: 8px 0; font-weight: 620; text-transform: uppercase; letter-spacing: .04em;
+}
+.calendario-celda {
+  background: var(--surface-1); min-height: 100px; padding: 5px; font-size: 0.72rem;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.calendario-celda .num-dia { color: var(--text-muted); font-size: 0.7rem; font-weight: 620; }
+.calendario-celda.hoy .num-dia {
+  background: var(--accent); color: #fff; border-radius: 50%;
+  width: 19px; height: 19px; display: inline-flex; align-items: center; justify-content: center;
+}
+.calendario-celda.fuera-de-mes { opacity: 0.3; background: var(--page); }
+
+/* Estado de la publicación: sólido = publicado, borde = programado,
+   punteado y tachado = cancelado, borde rojo = atrasado. */
+.calendario-item {
+  border-radius: 6px; padding: 3px 6px; font-size: 0.66rem; line-height: 1.35;
+  border: 1.5px solid var(--calendario-otro); background: transparent; color: var(--text-primary);
+  overflow: hidden;
+}
+.calendario-item .ci-linea1 { display: flex; align-items: center; gap: 4px; font-weight: 680; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendario-item .ci-linea2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .82; }
+.calendario-item .ci-linea3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .62; font-size: 0.6rem; font-style: italic; }
+.calendario-item.facebook { border-color: var(--calendario-facebook); }
+.calendario-item.instagram { border-color: var(--calendario-instagram); }
+.calendario-item.linkedin { border-color: var(--calendario-linkedin); }
+.calendario-item.mailchimp { border-color: var(--calendario-mailchimp); }
+.calendario-item.tiktok { border-color: var(--calendario-tiktok); }
+/* Publicado: fondo sólido del color del canal — lo hecho "pesa" más. */
+.calendario-item.publicado.facebook { background: var(--calendario-facebook); color: #17324a; }
+.calendario-item.publicado.instagram { background: var(--calendario-instagram); color: #4a1638; }
+.calendario-item.publicado.linkedin { background: var(--calendario-linkedin); color: #26272c; }
+.calendario-item.publicado.mailchimp { background: var(--calendario-mailchimp); color: #2b2b2b; }
+.calendario-item.publicado.tiktok { background: var(--calendario-tiktok); color: #fff; }
+/* Aprobado: relleno tenue — listo pero todavía no salió. */
+.calendario-item.aprobado { background: color-mix(in srgb, currentColor 6%, transparent); border-style: solid; }
+/* En producción: barra lateral naranja, se está trabajando ahora. */
+.calendario-item.en_produccion { border-left-width: 4px; border-left-color: var(--estado-en_produccion); }
+/* Pendiente: borde punteado suave, todavía no arrancó. */
+.calendario-item.pendiente { border-style: dotted; opacity: .8; }
+.calendario-item.cancelado { opacity: .45; border-style: dashed; text-decoration: line-through; }
+.calendario-item.atrasado { border-color: var(--salud-rojo); border-style: dashed; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--salud-rojo) 25%, transparent); }
+.leyenda-estados { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin-bottom: var(--sp-3); font-size: 0.75rem; color: var(--text-muted); }
+.leyenda-estados span { display: inline-flex; align-items: center; gap: 6px; }
+.leyenda-estados .muestra {
+  width: 22px; height: 13px; border-radius: 4px; border: 1.5px solid var(--calendario-linkedin); display: inline-block;
+}
+.leyenda-estados .muestra.publicado { background: var(--calendario-linkedin); }
+.leyenda-estados .muestra.aprobado { background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+.leyenda-estados .muestra.en_produccion { border-left: 4px solid var(--estado-en_produccion); }
+.leyenda-estados .muestra.pendiente { border-style: dotted; }
+.leyenda-estados .muestra.cancelado { border-style: dashed; opacity: .5; }
+.leyenda-estados .muestra.atrasado { border-color: var(--salud-rojo); border-style: dashed; }
+
+/* ---------- publicaciones destacadas ---------- */
+.lista-posts { display: flex; flex-direction: column; }
+.post-item {
+  display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3);
+  align-items: start; padding: var(--sp-3) 0; border-bottom: 1px solid var(--gridline);
+}
+.post-item:last-child { border-bottom: none; }
+.post-copy {
+  font-size: 0.85rem; line-height: 1.45; color: var(--text-primary);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.post-meta { font-size: 0.73rem; color: var(--text-muted); margin-top: 3px; display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.post-metricas { text-align: right; white-space: nowrap; }
+.post-metricas strong { display: block; font-size: 1rem; font-weight: 660; font-variant-numeric: tabular-nums; }
+.post-metricas span { font-size: 0.72rem; color: var(--text-muted); }
+
+.vacio { color: var(--text-muted); font-size: 0.85rem; padding: var(--sp-3) 0; }
+footer { text-align: center; color: var(--text-muted); font-size: 0.74rem; padding: var(--sp-5); }
+
+/* ---------- responsive: tablet y celular ----------
+   Las grillas de 2 columnas ya colapsan a 1 debajo de 1000px. Lo que falta
+   ahí es navegación (pestañas con 4 botones no entran en un celular) y
+   tipografía/paddings pensados para escritorio que a 1000px siguen intactos.
+   Ningún gráfico cambia de tamaño por CSS salvo su contenedor: Plotly
+   (responsive:true + automargin) hace el resto solo. */
+@media (max-width: 768px) {
+  header { padding: var(--sp-4) var(--sp-5); }
+  header h1 { font-size: 1.15rem; }
+
+  /* Con 4 pestañas principales (o 2 sub-pestañas) el texto no entra en un
+     celular angosto; en vez de partirlas en varias líneas, se deja una sola
+     fila que se desliza horizontalmente, como en apps móviles. */
+  .tabs, .subtabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar, .subtabs::-webkit-scrollbar { display: none; }
+  .tab-btn, .subtab-btn { white-space: nowrap; flex: 0 0 auto; }
+
+  .health-score { padding: var(--sp-4); gap: var(--sp-4); }
+  .health-aro { width: 84px; height: 84px; }
+  .health-aro .health-num strong { font-size: 1.5rem; }
+  .health-texto { min-width: 0; }
+
+  .kpis-hero .kpi { padding: var(--sp-4); }
+  .kpis-hero .kpi .valor { font-size: 1.8rem; }
+
+  section.panel { padding: var(--sp-4); }
+  .dropdown-panel { max-width: calc(100vw - 48px); }
+}
+
+@media (max-width: 480px) {
+  main { padding-top: var(--sp-3); }
+  header h1 { font-size: 1.02rem; }
+  header p { font-size: 0.76rem; }
+
+  /* Debajo de ~480px hasta el auto-fit más chico fuerza 2 columnas apretadas
+     en vez de una: se pasa a 1 sola columna explícita. */
+  .kpis-hero { grid-template-columns: 1fr; }
+  .kpis, .kpis-2filas { grid-template-columns: 1fr; }
+  .grid-perfiles { grid-template-columns: 1fr; }
+
+  .health-score { flex-direction: column; align-items: flex-start; }
+
+  .grafico-alto, .grafico-medio { height: 260px; }
+}
+
+/* ---------- impresión / exportar a PDF ----------
+   Objetivo: que "Imprimir → Guardar como PDF" desde el navegador exporte
+   solo lo que está mirando en pantalla — la pestaña y sub-pestaña activas,
+   con los filtros ya aplicados (unidad, año, mes, campaña) — no las 4
+   pestañas completas. Así "Mailchimp, mes de julio" imprime solo eso. Las
+   reglas de abajo no tocan qué pestaña está activa (ya lo maneja el CSS de
+   pantalla, .tab-panel.activo/.subtab-panel.activo); solo ocultan controles
+   que no sirven en papel. El JS marca un modo de impresión en beforeprint/
+   afterprint (ver template_main.js) para que las tablas paginadas impriman
+   todas sus filas filtradas, no solo la página visible en pantalla, y para
+   que el nombre sugerido del PDF incluya la pestaña y el período. */
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; }
+  .sticky-top { position: static; box-shadow: none; }
+  #toggle-tema, .tabs, .subtabs, .buscador, .btn-info, .popover { display: none !important; }
+  main { padding: 0; max-width: 100%; }
+
+  .tab-panel[data-titulo-impresion]::before,
+  .subtab-panel[data-titulo-impresion]::before {
+    content: attr(data-titulo-impresion);
+    display: block; font-size: 1.3rem; font-weight: 700; color: var(--cainco-azul);
+    margin: var(--sp-6) 0 var(--sp-3); padding-bottom: var(--sp-2);
+    border-bottom: 2px solid var(--cainco-azul);
+  }
+  .tab-panel.activo::before { margin-top: 0; }
+
+  section.panel, .card-perfil, .kpi, .health-score { box-shadow: none; break-inside: avoid; }
+  .tabla-pie .paginador { display: none; }
+  table.tabla th, table.tabla td { white-space: normal; }
+}

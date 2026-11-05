@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Control de Contenido · CAINCO</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+__CSS_CONTROL_CONTENIDO__
+</style>
+</head>
+<body>
+
+<div class="sticky-top" id="sticky-top">
+  <header>
+    <div>
+      <h1>Control de Contenido · CAINCO</h1>
+      <p id="generado-en"></p>
+      <span class="header-badge">Gerencia de Marketing · orgánico · pauta · email</span>
+    </div>
+    <button id="toggle-tema" type="button">Cambiar tema</button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn activo" data-tab="resumen" type="button">Resumen</button>
+    <button class="tab-btn" data-tab="perfiles" type="button">Control de Perfiles</button>
+    <button class="tab-btn" data-tab="analisis" type="button">Análisis</button>
+    <button class="tab-btn" data-tab="mailchimp" type="button">Mailchimp</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- ============ RESUMEN ============ -->
+  <section class="tab-panel activo" id="tab-resumen" data-titulo-impresion="Resumen">
+    <div class="aviso">
+      <strong>Alcance de la medición.</strong> Este tablero mide desempeño de medios: contenido orgánico, pauta y email.
+      El último punto medible es el clic — no hay trazabilidad de clic a venta cerrada, así que
+      <strong>no refleja ingresos ni conversión comercial</strong>.
+      Dos aclaraciones sobre los datos: Meta discontinuó el alcance orgánico de Facebook (por eso se usa Visualizaciones),
+      y el Health Score y el puntaje del ranking son convenciones de este tablero para comparar unidades entre sí,
+      no métricas oficiales de Meta.
+    </div>
+    <div class="health-score" id="health-score"></div>
+    <div class="kpis kpis-hero" id="kpis-resumen"></div>
+
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2>Dónde actuar</h2>
+        <p>Perfiles ordenados por urgencia: primero los que llevan más tiempo sin publicar.</p>
+      </div>
+      <section class="panel">
+        <div id="tabla-salud-perfiles"></div>
+      </section>
+    </div>
+
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2>Qué está funcionando</h2>
+        <p>Lecturas derivadas de la información ya cargada. Si un dato no alcanza, la lectura no aparece.</p>
+      </div>
+      <section class="panel">
+        <h2>Insights del período</h2>
+        <p class="subtitulo">Comparado contra el mes anterior cuando hay histórico.</p>
+        <div id="lista-insights"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ============ CONTROL DE PERFILES ============ -->
+  <section class="tab-panel" id="tab-perfiles" data-titulo-impresion="Control de Perfiles">
+    <div class="barra-filtros">
+      <div class="grupo-filtro">
+        <label>Unidad</label>
+        <div class="chips-filtro" id="chips-unidad-perfiles"></div>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2 id="titulo-unidad-perfiles">Perfiles de la unidad</h2>
+        <p>Facebook e Instagram de la misma marca, agrupados como una sola unidad.</p>
+      </div>
+      <div id="lista-perfiles-unidad" class="grid-perfiles"></div>
+    </div>
+
+    <div class="seccion">
+      <div class="grid-2">
+        <section class="panel">
+          <h2>Facebook vs. Instagram</h2>
+          <p class="subtitulo">Peso de cada red dentro de la unidad, en el último mes con datos.</p>
+          <div id="chart-comparacion-redes" class="grafico-alto"></div>
+        </section>
+        <section class="panel">
+          <h2>Evolución de seguidores</h2>
+          <p class="subtitulo">Mes a mes, con la variación respecto al mes previo.</p>
+          <div id="chart-seguidores" class="grafico-alto"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="panel">
+      <details class="detalle-tabla">
+        <summary><h2>Histórico mensual de la unidad</h2></summary>
+        <div id="tabla-control-perfiles" class="detalle-contenido"></div>
+      </details>
+    </section>
+
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2>Ranking de unidades</h2>
+        <p>Puntaje 0-100 que combina actividad, engagement y consistencia de publicación. Sirve para comparar unidades entre sí, no como nota absoluta.</p>
+      </div>
+      <section class="panel">
+        <div id="ranking-unidades"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ============ ANÁLISIS ============ -->
+  <section class="tab-panel" id="tab-analisis" data-titulo-impresion="Análisis">
+    <div class="barra-filtros">
+      <div class="grupo-filtro">
+        <label>Unidad</label>
+        <div class="chips-filtro" id="chips-unidad-analisis"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Año</label>
+        <div id="drop-anio-analisis"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Mes</label>
+        <div id="drop-mes-analisis"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Campaña</label>
+        <input type="search" class="buscador" id="buscar-campana-analisis" placeholder="Buscar campaña o texto de publicación..." />
+      </div>
+    </div>
+
+    <div class="subtabs">
+      <button class="subtab-btn activo" data-subtab-grupo="analisis" data-subtab="analisis-organico" type="button">Orgánico</button>
+      <button class="subtab-btn" data-subtab-grupo="analisis" data-subtab="analisis-pauta" type="button">Pauta</button>
+    </div>
+
+    <div class="subtab-panel activo" data-subtab-grupo="analisis" id="subtab-analisis-organico" data-titulo-impresion="Análisis · Orgánico">
+      <div class="seccion">
+        <div class="seccion-cabecera">
+          <h2>Contenido orgánico</h2>
+          <p id="nota-organico">Todos los indicadores respetan los filtros de arriba.</p>
+        </div>
+        <div class="kpis" id="kpis-analisis-organico"></div>
+
+        <div class="grid-2-desigual">
+          <section class="panel">
+            <h2>Evolución</h2>
+            <p class="subtitulo">Visualizaciones e interacciones por mes dentro del período filtrado.</p>
+            <div id="chart-organico" class="grafico-medio"></div>
+          </section>
+          <section class="panel">
+            <h2>Distribución de formatos</h2>
+            <p class="subtitulo">Qué tipo de contenido se publica y cuánto engagement genera cada uno.</p>
+            <div id="chart-formatos" class="grafico-medio"></div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <details class="detalle-tabla">
+            <summary><h2>Detalle de publicaciones</h2></summary>
+            <div class="detalle-contenido" id="detalle-organico"></div>
+          </details>
+        </section>
+      </div>
+    </div>
+
+    <div class="subtab-panel" data-subtab-grupo="analisis" id="subtab-analisis-pauta" data-titulo-impresion="Análisis · Pauta">
+      <div class="seccion">
+        <div class="seccion-cabecera">
+          <h2>Pauta (Meta Ads)</h2>
+          <p>Campañas emparejadas con esta unidad por su nombre.</p>
+        </div>
+        <div class="sub-cabecera">Alcance de la inversión</div>
+        <div class="kpis" id="kpis-analisis-ads-progreso"></div>
+        <div class="sub-cabecera">Respuesta de la audiencia</div>
+        <div class="kpis" id="kpis-analisis-ads-conversion"></div>
+
+        <section class="panel">
+          <h2>Evolución de la pauta</h2>
+          <p class="subtitulo">Inversión y clics por mes, con el CTR como línea de referencia.</p>
+          <div id="chart-ads" class="grafico-alto"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Detalle de campañas</h2>
+          <p class="subtitulo" id="subtitulo-campanas">
+            Ordenable por cualquier columna. El color de frecuencia compara contra referencias de industria.
+          </p>
+          <div id="detalle-ads"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MAILCHIMP ============ -->
+  <section class="tab-panel" id="tab-mailchimp" data-titulo-impresion="Mailchimp">
+    <div class="barra-filtros">
+      <div class="grupo-filtro">
+        <label>Unidad</label>
+        <div class="chips-filtro" id="chips-unidad-mailchimp"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Año</label>
+        <div id="drop-anio-mailchimp"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Mes</label>
+        <div id="drop-mes-mailchimp"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Campaña</label>
+        <input type="search" class="buscador" id="buscar-campana-mailchimp" placeholder="Buscar campaña..." />
+      </div>
+    </div>
+
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2 id="titulo-mailchimp" class="titulo-con-icono">Rendimiento de los envíos</h2>
+        <p>Global de la organización: los envíos de Mailchimp no están ligados a un perfil de Facebook o Instagram en particular.</p>
+      </div>
+      <div class="kpis kpis-2filas" id="kpis-mailchimp"></div>
+
+      <section class="panel">
+        <h2>Embudo del período</h2>
+        <p class="subtitulo">De lo enviado, cuánto llegó, cuánto se abrió y cuánto se clickeó.</p>
+        <div id="chart-mailchimp-embudo" class="grafico-medio"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Campañas del período</h2>
+        <p class="subtitulo" id="subtitulo-campanas-mailchimp">
+          Ordenable por cualquier columna. El color de las tasas compara contra referencias de industria.
+        </p>
+        <div id="tabla-mailchimp"></div>
+      </section>
+    </div>
+  </section>
+
+</main>
+
+<footer>Generado automáticamente por la Skill "Actualizar Reporte RRSS".</footer>
+
+<script>
+__JS_CONTROL_CONTENIDO__
+</script>
+</body>
+</html>
