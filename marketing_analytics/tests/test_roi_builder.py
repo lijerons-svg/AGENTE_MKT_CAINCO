@@ -43,12 +43,12 @@ def test_agrupa_por_campana_sumando_inversion_de_todos_los_dias_y_redes(conn):
     filas = list(ws.iter_rows(min_row=2, values_only=True))
 
     assert len(filas) == 1
-    unidad, campana, id_campana, cierres, no_cierres, monto, inversion = filas[0][:7]
+    unidad, campana, id_campana, leads, ventas, monto, inversion = filas[0][:7]
     assert unidad == "CAINCO"
     assert campana == "Campaña Julio"
     assert id_campana == "camp_1"
-    assert cierres is None
-    assert no_cierres is None
+    assert leads is None
+    assert ventas is None
     assert monto is None
     assert inversion == 30.0
 
@@ -70,7 +70,7 @@ def test_dos_campanas_distintas_generan_dos_filas(conn):
     assert sorted(ids) == ["camp_a", "camp_b"]
 
 
-def test_escribe_formulas_para_costo_de_cierre_ticket_tasa_y_roi(conn):
+def test_escribe_formulas_para_costo_por_venta_ticket_tasa_y_roi(conn):
     upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
 
     ruta = generar_roi_campanas(conn, tmp_path_factory_roi())
@@ -78,10 +78,49 @@ def test_escribe_formulas_para_costo_de_cierre_ticket_tasa_y_roi(conn):
     ws = wb.active
     fila = ws[2]
 
-    assert fila[7].value == '=IFERROR(G2/D2,"")'
-    assert fila[8].value == '=IFERROR(F2/D2,"")'
-    assert fila[9].value == '=IFERROR(D2/(D2+E2),"")'
+    assert fila[7].value == '=IFERROR(G2/E2,"")'
+    assert fila[8].value == '=IFERROR(F2/E2,"")'
+    assert fila[9].value == '=IFERROR(E2/D2,"")'
     assert fila[10].value == '=IFERROR((F2-G2)/G2,"")'
+
+
+def test_encabezados_manuales_se_respetan_si_la_usuaria_los_renombra(conn):
+    """Caso real: la usuaria renombró D/E/F a "Cantidad de Leads"/"Cantidad
+    de VEntas"/"Monto total de cierre" directamente en el Excel. Esos
+    encabezados no deben volver a su nombre original en la próxima corrida."""
+    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
+    ruta = tmp_path_factory_roi()
+    generar_roi_campanas(conn, ruta)
+
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+    ws["D1"] = "Cantidad de Leads"
+    ws["E1"] = "Cantidad de VEntas"
+    wb.save(ruta)
+
+    generar_roi_campanas(conn, ruta)
+
+    wb2 = openpyxl.load_workbook(ruta)
+    ws2 = wb2.active
+    assert ws2["D1"].value == "Cantidad de Leads"
+    assert ws2["E1"].value == "Cantidad de VEntas"
+
+
+def test_encabezados_automaticos_se_actualizan_siempre(conn):
+    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
+    ruta = tmp_path_factory_roi()
+    generar_roi_campanas(conn, ruta)
+
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+    ws["H1"] = "texto viejo que ya no aplica"
+    wb.save(ruta)
+
+    generar_roi_campanas(conn, ruta)
+
+    wb2 = openpyxl.load_workbook(ruta)
+    ws2 = wb2.active
+    assert ws2["H1"].value == "Costo por venta"
 
 
 def test_preserva_datos_manuales_al_regenerar_aunque_cambie_el_orden(conn):
