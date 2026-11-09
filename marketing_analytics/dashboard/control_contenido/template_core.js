@@ -541,6 +541,11 @@ function tablaInteractiva(contenedor, filas, columnasOriginal, opciones) {
   }
 
   function pintar() {
+    // Los popover de encabezado viven en document.body, no en el <th> que
+    // se recrea en cada redibujado — sin este borrado se acumularían de a
+    // uno por cada ordenamiento/filtro/página.
+    document.querySelectorAll(`[data-grupo-popover="${claveOrden}"]`).forEach((p) => p.remove());
+
     const datos = visibles();
     // En modo impresión (ver template_main.js) se ignora la paginación: el
     // PDF tiene que traer todas las filas, no solo la página que estaba
@@ -581,8 +586,8 @@ function tablaInteractiva(contenedor, filas, columnasOriginal, opciones) {
       // agregarInfo/agregarMenuColumna detienen la propagación del click de
       // sus propios botones, así que no disparan el ordenamiento de la
       // columna (eso lo maneja el listener de más arriba, sobre todo el th).
-      if (c.info) agregarInfo(th, c.info);
-      agregarMenuColumna(th, c.clave, moverColumna);
+      if (c.info) agregarInfo(th, c.info, claveOrden);
+      agregarMenuColumna(th, c.clave, moverColumna, claveOrden);
     });
     thead.appendChild(trHead);
     tabla.appendChild(thead);
@@ -691,7 +696,41 @@ function renderRanking(contenedorId, items, mensajeVacio) {
 
 /* Mismo "?" que el de los KPIs, para explicar una métrica desde cualquier
    otro punto de la interfaz (títulos de panel, encabezados, etc.). */
-function agregarInfo(contenedor, texto) {
+/* Los popover de info/menú de columna se cuelgan de document.body (no del
+   botón que los abre): dentro de un <th> con position:sticky dentro de un
+   contenedor con overflow-x:auto, un popover posicionado relativo al propio
+   botón terminaba recortado/tapado por esa combinación (texto de la tabla
+   "entreverado" con el del popover). Flotando en position:fixed, calculado
+   a partir de getBoundingClientRect() del botón, queda siempre arriba de
+   todo y nunca se recorta. */
+function _posicionarPopoverFlotante(boton, pop) {
+  const r = boton.getBoundingClientRect();
+  const ancho = pop.offsetWidth || 230;
+  let left = r.left;
+  const maxLeft = window.innerWidth - ancho - 8;
+  if (left > maxLeft) left = Math.max(8, maxLeft);
+  pop.style.left = `${left}px`;
+  pop.style.top = `${r.bottom + 6}px`;
+}
+
+function _cerrarPopoversFlotantes() {
+  document.querySelectorAll('.popover-flotante.visible').forEach((p) => p.classList.remove('visible'));
+}
+
+/* Un click en cualquier lado, o hacer scroll, cierra los popovers abiertos
+   (al hacer scroll, uno fixed se queda "pegado" en el lugar viejo si no se
+   cierra). `true` = fase de captura, para enterarse también del scroll
+   dentro de contenedores internos (ej. la tabla), no solo de la página. */
+document.addEventListener('click', _cerrarPopoversFlotantes);
+window.addEventListener('scroll', _cerrarPopoversFlotantes, true);
+
+/* `grupoLimpieza`: id opcional para que quien arma una tabla (que se vuelve
+   a dibujar entera en cada ordenamiento/filtro/página) pueda borrar los
+   popover viejos antes de recrear los encabezados — si no, cada redibujado
+   sumaría uno más a document.body sin fin. Los demás usos (tarjetas KPI,
+   subtítulos de panel) no lo necesitan: su contenedor no se recrea, así
+   que el chequeo de "ya tiene botón" de abajo alcanza. */
+function agregarInfo(contenedor, texto, grupoLimpieza) {
   if (!contenedor || contenedor.querySelector('.btn-info')) return;
   const boton = document.createElement('button');
   boton.type = 'button';
@@ -699,36 +738,35 @@ function agregarInfo(contenedor, texto) {
   boton.textContent = '?';
   boton.setAttribute('aria-label', 'Cómo se calcula');
   const pop = document.createElement('div');
-  pop.className = 'popover';
+  pop.className = 'popover popover-flotante';
   pop.innerHTML = texto;
+  if (grupoLimpieza) pop.dataset.grupoPopover = grupoLimpieza;
+  document.body.appendChild(pop);
   boton.addEventListener('click', (ev) => {
     ev.stopPropagation();
     const abierto = pop.classList.contains('visible');
-    document.querySelectorAll('.popover.visible').forEach((p) => p.classList.remove('visible'));
-    if (!abierto) pop.classList.add('visible');
+    _cerrarPopoversFlotantes();
+    if (!abierto) {
+      pop.classList.add('visible');
+      _posicionarPopoverFlotante(boton, pop);
+    }
   });
   contenedor.appendChild(boton);
-  contenedor.appendChild(pop);
-  if (getComputedStyle(contenedor).position === 'static') contenedor.style.position = 'relative';
 }
-
-/* Un click en cualquier lado cierra los popovers abiertos. */
-document.addEventListener('click', () => {
-  document.querySelectorAll('.popover.visible').forEach((p) => p.classList.remove('visible'));
-});
 
 /* Botón "⋮" en cada encabezado de tablaInteractiva: abre un menú chico con
    "Mover al inicio" / "Mover al final". Reordenar así, en vez de arrastrar
    y soltar, evita que un click accidental mueva una columna sin querer —
    acá hace falta abrir el menú y elegir, a propósito. */
-function agregarMenuColumna(th, clave, onMover) {
+function agregarMenuColumna(th, clave, onMover, grupoLimpieza) {
   const boton = document.createElement('button');
   boton.type = 'button';
   boton.className = 'btn-mover';
   boton.textContent = '⋮';
   boton.setAttribute('aria-label', 'Mover columna');
   const menu = document.createElement('div');
-  menu.className = 'popover menu-columna';
+  menu.className = 'popover popover-flotante menu-columna';
+  if (grupoLimpieza) menu.dataset.grupoPopover = grupoLimpieza;
 
   const opcion = (texto, destino) => {
     const btn = document.createElement('button');
@@ -743,16 +781,18 @@ function agregarMenuColumna(th, clave, onMover) {
   };
   menu.appendChild(opcion('« Mover al inicio', 'inicio'));
   menu.appendChild(opcion('Mover al final »', 'fin'));
+  document.body.appendChild(menu);
 
   boton.addEventListener('click', (ev) => {
     ev.stopPropagation();
     const abierto = menu.classList.contains('visible');
-    document.querySelectorAll('.popover.visible').forEach((p) => p.classList.remove('visible'));
-    if (!abierto) menu.classList.add('visible');
+    _cerrarPopoversFlotantes();
+    if (!abierto) {
+      menu.classList.add('visible');
+      _posicionarPopoverFlotante(boton, menu);
+    }
   });
   th.appendChild(boton);
-  th.appendChild(menu);
-  if (getComputedStyle(th).position === 'static') th.style.position = 'relative';
 }
 
 /* ---------- tabs ---------- */

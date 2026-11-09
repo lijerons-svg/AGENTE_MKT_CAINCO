@@ -295,6 +295,17 @@ function fmtMoneda(valor) {
   return fmtDec.format(v);
 }
 
+/* Símbolo en vez de la columna "Moneda" aparte — con una sola cuenta
+   publicitaria casi siempre es la misma moneda en todas las filas, así que
+   una columna entera para eso era ancho de más; el símbolo alcanza y es
+   más legible en el propio número. Si aparece una moneda sin símbolo
+   conocido, se muestra su código tal cual (nunca se oculta el dato). */
+const SIMBOLO_MONEDA = { USD: '$', BOB: 'Bs' };
+function fmtInversionConSimbolo(f) {
+  const simbolo = SIMBOLO_MONEDA[(f.moneda || '').toUpperCase()] || f.moneda || '';
+  return `${simbolo} ${fmtMoneda(f.gasto)}`.trim();
+}
+
 function renderKpisAds(filas, previas) {
   const a = agregadosAds(filas);
   const p = agregadosAds(previas);
@@ -507,10 +518,9 @@ function renderDetalleAds(filas) {
         clave: 'red', etiqueta: 'Red', render: (f) => (f.red ? pillRed(f.red) : '—'),
         info: 'Red donde se mostró el anuncio (Facebook, Instagram, Audience Network, etc.), según el desglose de Meta.',
       },
-      { clave: 'moneda', etiqueta: 'Moneda', info: 'Moneda de facturación de la cuenta publicitaria.' },
       {
-        clave: 'gasto', etiqueta: 'Inversión', tipo: 'moneda', render: (f) => fmtMoneda(f.gasto),
-        info: 'Monto gastado en esta campaña durante el período filtrado.',
+        clave: 'gasto', etiqueta: 'Inversión', tipo: 'moneda', render: fmtInversionConSimbolo,
+        info: 'Monto gastado en esta campaña durante el período filtrado, con el símbolo de su moneda de facturación.',
       },
       {
         clave: 'impresiones', etiqueta: 'Impr.', tipo: 'num',
@@ -534,10 +544,6 @@ function renderDetalleAds(filas) {
       {
         clave: 'cpc', etiqueta: 'CPC', tipo: 'moneda', render: (f) => fmtMoneda(f.cpc),
         info: '<strong>CPC</strong> — Inversión ÷ Clics: costo promedio de cada clic (de cualquier tipo, ver columna "Clics").',
-      },
-      {
-        clave: 'resultados', etiqueta: 'Result.', tipo: 'num',
-        info: 'Depende del objetivo de la campaña: clics al link si es de tráfico, conversaciones de WhatsApp si es de mensajes, leads si es de generación de contactos, el alcance mismo si es de reconocimiento, etc. — así lo define Meta, no es un campo único.',
       },
       {
         clave: 'objetivo', etiqueta: 'Objetivo', render: (f) => objetivoLegible(f.objetivo),

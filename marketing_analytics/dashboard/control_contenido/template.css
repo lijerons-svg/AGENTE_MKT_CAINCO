@@ -111,6 +111,7 @@ html[data-theme="dark"] {
 * { box-sizing: border-box; }
 body {
   margin: 0;
+  overflow-x: hidden; /* red de seguridad: ningún gráfico ni tabla empuja la página entera */
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   background: var(--page);
   color: var(--text-primary);
@@ -261,14 +262,19 @@ main { padding: var(--sp-5) clamp(16px, 4vw, 56px) var(--sp-8); max-width: 1520p
 section.panel {
   background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
   padding: var(--sp-5); margin-bottom: var(--sp-5);
+  min-width: 0; /* si no, un gráfico ancho empuja la columna de la grilla y desborda la página */
 }
 section.panel h2 { margin: 0 0 var(--sp-1); font-size: 0.98rem; font-weight: 680; }
 section.panel .subtitulo { margin: 0 0 var(--sp-4); font-size: 0.81rem; color: var(--text-muted); max-width: 80ch; }
 .panel-cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-4); flex-wrap: wrap; }
 
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
-.grid-2-desigual { display: grid; grid-template-columns: 1.35fr 1fr; gap: var(--sp-5); }
-@media (max-width: 1000px) { .grid-2, .grid-2-desigual { grid-template-columns: 1fr; } }
+/* minmax(0, 1fr), no 1fr a secas: una columna "1fr" sola no se achica por
+   debajo del ancho mínimo de su contenido — con un gráfico de Plotly
+   adentro, eso empujaba la grilla entera (y la página) a desbordar en vez
+   de dejar que el propio gráfico se achique (ya tiene responsive:true). */
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-5); }
+.grid-2-desigual { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--sp-5); }
+@media (max-width: 1000px) { .grid-2, .grid-2-desigual { grid-template-columns: minmax(0, 1fr); } }
 
 /* Altura de los contenedores de gráficos Plotly. Se define por clase (no
    inline) para poder bajarla en celular sin tocar el HTML ni el JS: Plotly
@@ -336,6 +342,11 @@ section.panel .subtitulo { margin: 0 0 var(--sp-4); font-size: 0.81rem; color: v
   display: block; margin: var(--sp-2) 0; padding: 6px 8px; background: var(--page);
   border-radius: var(--radius-sm); font-size: 0.76rem; color: var(--text-primary);
 }
+/* Los de encabezado de tabla (info "?" y menú "⋮") se posicionan con JS
+   (left/top calculados desde getBoundingClientRect del botón) en vez de
+   colgar del propio <th> — ese vivía adentro de un contenedor con scroll y
+   position:sticky, y terminaba recortado o superpuesto con las filas. */
+.popover-flotante { position: fixed; top: auto; left: auto; right: auto; width: 230px; min-width: 0; }
 
 .kpi .delta.mejor { color: var(--mejor); }
 .kpi .delta.peor { color: var(--peor); }
@@ -500,19 +511,14 @@ table.tabla thead th {
   text-transform: uppercase; letter-spacing: .05em;
   position: sticky; top: 0; background: var(--surface-1); z-index: 1;
 }
-/* El popover genérico (.popover, en template.css de los KPIs) usa
-   left/right fijos pensados para una tarjeta ancha — dentro de un <th>
-   angosto eso lo aplastaría a unos pocos px. Acá se ancla a la izquierda
-   con un ancho propio en vez de estirarse al ancho de la columna. */
-table.tabla th .popover { left: 0; right: auto; top: 24px; width: 230px; text-transform: none; letter-spacing: 0; }
 table.tabla th .btn-info { text-transform: none; }
-table.tabla th .menu-columna { width: 170px; padding: 6px; }
-table.tabla th .menu-columna button {
+.menu-columna { width: 170px; padding: 6px; text-transform: none; letter-spacing: 0; }
+.menu-columna button {
   display: block; width: 100%; text-align: left; background: transparent; border: none;
   padding: 7px 8px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 400;
   color: var(--text-primary); cursor: pointer;
 }
-table.tabla th .menu-columna button:hover { background: var(--page); }
+.menu-columna button:hover { background: var(--page); }
 table.tabla th.ordenable { cursor: pointer; user-select: none; }
 table.tabla th.ordenable:hover { color: var(--text-primary); }
 table.tabla th.ordenable::after { content: '↕'; opacity: .3; margin-left: 5px; font-size: 0.85em; }
