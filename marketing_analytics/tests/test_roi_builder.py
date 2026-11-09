@@ -115,6 +115,34 @@ def test_preserva_datos_manuales_al_regenerar_aunque_cambie_el_orden(conn):
     assert filas["camp_nueva"][3:6] == (None, None, None)
 
 
+def test_rerun_del_mismo_rango_sin_campanas_nuevas_no_toca_las_columnas_manuales(conn):
+    """Caso real reportado por la usuaria: corrió el backfill de nuevo sobre
+    un rango que ya incluía campañas con datos manuales cargados, y esos
+    datos desaparecieron. Esto simula exactamente eso: regenerar sin agregar
+    ninguna campaña nueva."""
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 4, 1), "facebook", 50.0, campana="Campaña Abril", id_campana="camp_abril")],
+    )
+    ruta = tmp_path_factory_roi()
+    generar_roi_campanas(conn, ruta)
+
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+    ws["D2"] = 5
+    ws["E2"] = 1
+    ws["F2"] = 3000.0
+    wb.save(ruta)
+
+    # Re-correr exactamente el mismo rango (mismo conector, mismos datos) —
+    # no agrega nada nuevo a la base.
+    generar_roi_campanas(conn, ruta)
+
+    wb2 = openpyxl.load_workbook(ruta)
+    ws2 = wb2.active
+    assert (ws2["D2"].value, ws2["E2"].value, ws2["F2"].value) == (5, 1, 3000.0)
+
+
 def tmp_path_factory_roi():
     import tempfile
     from pathlib import Path

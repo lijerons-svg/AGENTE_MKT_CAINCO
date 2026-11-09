@@ -4,10 +4,13 @@ alimentan fórmulas de costo de cierre, ticket promedio, tasa de cierre y ROI.
 
 A diferencia de Historico_RRSS.xlsx, este archivo SÍ tiene una fuente de
 verdad que vive fuera de la base de datos: lo que Sandy carga a mano en las
-columnas D/E/F. Por eso, antes de recrear el archivo, se lee el que ya existe
-y esos valores se trasladan al nuevo (buscando por ID de campaña, columna C,
-no por posición de fila — así una campaña nueva que se inserte en el medio no
-desalinea los datos manuales de las demás).
+columnas D/E/F. Por eso, si el archivo ya existe, se ABRE Y SE EDITA EN SITIO:
+las celdas D/E/F de una fila que ya existía NUNCA se leen ni se reescriben —
+solo se actualizan las columnas automáticas (Unidad, Campaña, Inversión) y las
+fórmulas de esa misma fila. Las campañas nuevas se agregan al final. Esto es
+más seguro que "leer todo a un diccionario y reconstruir el archivo de cero":
+no depende de que el matcheo por ID sea perfecto para no perder datos — si
+una fila ya existe, sus columnas manuales simplemente no se tocan, punto.
 """
 from __future__ import annotations
 
@@ -32,19 +35,16 @@ _ENCABEZADOS = [
     "ROI",
 ]
 
-# Columnas de carga manual (1-based, coinciden con el orden de _ENCABEZADOS).
-_COL_CIERRES = 4
-_COL_NO_CIERRES = 5
-_COL_MONTO_CIERRE = 6
-_COL_INVERSION = 7
+_COL_UNIDAD = 1
+_COL_CAMPANA = 2
 _COL_ID_CAMPANA = 3
+_COL_INVERSION = 7
 _FORMATO_MONEDA = '"$"#,##0.00'
 _FORMATO_PORCENTAJE = "0.0%"
 
 
 def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> Path:
     ruta_salida = Path(ruta_salida)
-    datos_manuales = _leer_datos_manuales_existentes(ruta_salida)
 
     campanas = conn.execute(
         """
@@ -55,28 +55,38 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
         """
     ).fetchall()
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "ROI Campañas"
-    ws.append(_ENCABEZADOS)
-    for celda in ws[1]:
-        celda.font = Font(bold=True)
+    if ruta_salida.exists():
+        wb = load_workbook(ruta_salida)
+        ws = wb.active
+    else:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "ROI Campañas"
+        ws.append(_ENCABEZADOS)
+        for celda in ws[1]:
+            celda.font = Font(bold=True)
+
+    fila_por_id: dict[str, int] = {}
+    for fila_celdas in ws.iter_rows(min_row=2):
+        id_celda = fila_celdas[_COL_ID_CAMPANA - 1].value
+        if id_celda is not None:
+            fila_por_id[id_celda] = fila_celdas[0].row
 
     for campana in campanas:
         id_campana = campana["id_campana_origen"]
-        cierres, no_cierres, monto_cierre = datos_manuales.get(id_campana, (None, None, None))
-        fila = ws.max_row + 1
-        ws.append(
-            [
-                campana["perfil_unidad"],
-                campana["campana"],
-                id_campana,
-                cierres,
-                no_cierres,
-                monto_cierre,
-                campana["inversion_total"],
-            ]
-        )
+        fila = fila_por_id.get(id_campana)
+        if fila is None:
+            fila = ws.max_row + 1
+            fila_por_id[id_campana] = fila
+            ws.cell(row=fila, column=_COL_ID_CAMPANA, value=id_campana)
+
+        # Solo columnas automáticas: A, B, G. D/E/F (manuales) jamás se tocan
+        # cuando la fila ya existía.
+        ws.cell(row=fila, column=_COL_UNIDAD, value=campana["perfil_unidad"])
+        ws.cell(row=fila, column=_COL_CAMPANA, value=campana["campana"])
+        celda_inversion = ws.cell(row=fila, column=_COL_INVERSION, value=campana["inversion_total"])
+        celda_inversion.number_format = _FORMATO_MONEDA
+
         _escribir_formulas(ws, fila)
 
     ws.column_dimensions["G"].hidden = True
@@ -103,28 +113,6 @@ def _escribir_formulas(ws: Worksheet, fila: int) -> None:
 
     celda_roi = ws.cell(row=fila, column=11, value=f'=IFERROR(({m}-{inv})/{inv},"")')
     celda_roi.number_format = _FORMATO_PORCENTAJE
-
-    ws.cell(row=fila, column=7).number_format = _FORMATO_MONEDA
-
-
-def _leer_datos_manuales_existentes(
-    ruta_salida: Path,
-) -> dict[str, tuple[int | None, int | None, float | None]]:
-    if not ruta_salida.exists():
-        return {}
-    wb = load_workbook(ruta_salida, data_only=False)
-    ws = wb.active
-    datos: dict[str, tuple[int | None, int | None, float | None]] = {}
-    for fila in ws.iter_rows(min_row=2, values_only=True):
-        id_campana = fila[_COL_ID_CAMPANA - 1]
-        if id_campana is None:
-            continue
-        datos[id_campana] = (
-            fila[_COL_CIERRES - 1],
-            fila[_COL_NO_CIERRES - 1],
-            fila[_COL_MONTO_CIERRE - 1],
-        )
-    return datos
 
 
 def _autoajustar_columnas(ws: Worksheet) -> None:
