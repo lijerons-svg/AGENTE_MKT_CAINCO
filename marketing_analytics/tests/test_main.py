@@ -34,10 +34,21 @@ def _crear_config_y_env(tmp_path):
     return config_yaml, env_file
 
 
+def _sin_publicacion_real(monkeypatch):
+    """`publicar_github_pages` hace git add/commit/push sobre el repo real
+    (resuelve su ruta desde __file__, no desde tmp_path). Sin este parche,
+    cada test que corre main() termina empujando commits reales al repo —
+    en la máquina de Sandy, eso significa pisar el dashboard público real
+    con contenido de prueba. Bug real de QA detectado en el repo de
+    desarrollo: una corrida completa de pytest generó 7 commits de ruido."""
+    monkeypatch.setattr(main_mod, "publicar_github_pages", lambda ruta_html: None)
+
+
 def test_main_genera_los_tres_archivos_y_sale_con_codigo_0(tmp_path, monkeypatch):
     config_yaml, env_file = _crear_config_y_env(tmp_path)
     monkeypatch.setattr(main_mod, "construir_conectores_activos", lambda config, secrets: [_ConectorFalso()])
     monkeypatch.chdir(tmp_path)
+    _sin_publicacion_real(monkeypatch)
 
     runner = CliRunner()
     resultado = runner.invoke(
@@ -66,6 +77,7 @@ def test_main_solo_mailchimp_configurado_no_exige_token_de_meta(tmp_path, monkey
     env_file.write_text("MAILCHIMP_API_KEY=fake\n", encoding="utf-8")
     monkeypatch.setattr(main_mod, "construir_conectores_activos", lambda config, secrets: [_ConectorFalso()])
     monkeypatch.chdir(tmp_path)
+    _sin_publicacion_real(monkeypatch)
 
     runner = CliRunner()
     resultado = runner.invoke(
@@ -124,6 +136,7 @@ def test_main_sin_fechas_continua_automaticamente_en_la_segunda_corrida(tmp_path
     config_yaml, env_file = _crear_config_y_env(tmp_path)
     monkeypatch.setattr(main_mod, "construir_conectores_activos", lambda config, secrets: [_ConectorFalso()])
     monkeypatch.chdir(tmp_path)
+    _sin_publicacion_real(monkeypatch)
 
     runner = CliRunner()
     primera = runner.invoke(main_mod.main, ["--config", str(config_yaml), "--env", str(env_file)])
@@ -138,6 +151,7 @@ def test_main_con_todo_fallido_sale_con_codigo_1_pero_igual_genera_reportes(tmp_
     config_yaml, env_file = _crear_config_y_env(tmp_path)
     monkeypatch.setattr(main_mod, "construir_conectores_activos", lambda config, secrets: [_ConectorQueFalla()])
     monkeypatch.chdir(tmp_path)
+    _sin_publicacion_real(monkeypatch)
 
     runner = CliRunner()
     resultado = runner.invoke(
@@ -160,6 +174,7 @@ def test_main_con_errores_no_avanza_el_checkpoint(tmp_path, monkeypatch):
     config_yaml, env_file = _crear_config_y_env(tmp_path)
     monkeypatch.setattr(main_mod, "construir_conectores_activos", lambda config, secrets: [_ConectorQueFalla()])
     monkeypatch.chdir(tmp_path)
+    _sin_publicacion_real(monkeypatch)
 
     runner = CliRunner()
     runner.invoke(
