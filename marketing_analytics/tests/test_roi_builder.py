@@ -7,7 +7,15 @@ from marketing_analytics.models.records import MetaAdsRegistro
 from marketing_analytics.reports.roi_builder import generar_roi_campanas
 
 
-def _registro(fecha, red, importe, campana="Campaña Julio", id_campana="camp_1", unidad="CAINCO"):
+def _registro(
+    fecha,
+    red,
+    importe,
+    campana="Campaña Julio",
+    id_campana="camp_1",
+    unidad="CAINCO",
+    fecha_inicio_campana=None,
+):
     return MetaAdsRegistro(
         cuenta_publicitaria="123",
         perfil_unidad=unidad,
@@ -24,16 +32,27 @@ def _registro(fecha, red, importe, campana="Campaña Julio", id_campana="camp_1"
         cpc=2.1,
         resultados=1,
         id_campana_origen=id_campana,
+        fecha_inicio_campana=fecha_inicio_campana,
     )
+
+
+def test_encabezados_son_mes_campana_id_e_inversion(conn):
+    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 10.0)])
+
+    ruta = generar_roi_campanas(conn, tmp_path_factory_roi())
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+
+    assert [c.value for c in ws[1]] == ["Mes", "Campaña", "ID de campaña", "Inversión total"]
 
 
 def test_agrupa_por_campana_sumando_inversion_de_todos_los_dias_y_redes(conn):
     upsert_meta_ads(
         conn,
         [
-            _registro(datetime.date(2026, 7, 1), "facebook", 10.0),
-            _registro(datetime.date(2026, 7, 2), "facebook", 15.0),
-            _registro(datetime.date(2026, 7, 1), "instagram", 5.0),
+            _registro(datetime.date(2026, 7, 1), "facebook", 10.0, fecha_inicio_campana=datetime.date(2026, 7, 1)),
+            _registro(datetime.date(2026, 7, 2), "facebook", 15.0, fecha_inicio_campana=datetime.date(2026, 7, 1)),
+            _registro(datetime.date(2026, 7, 1), "instagram", 5.0, fecha_inicio_campana=datetime.date(2026, 7, 1)),
         ],
     )
 
@@ -42,15 +61,33 @@ def test_agrupa_por_campana_sumando_inversion_de_todos_los_dias_y_redes(conn):
     ws = wb.active
     filas = list(ws.iter_rows(min_row=2, values_only=True))
 
-    assert len(filas) == 1
-    unidad, campana, id_campana, leads, ventas, monto, inversion = filas[0][:7]
-    assert unidad == "CAINCO"
-    assert campana == "Campaña Julio"
-    assert id_campana == "camp_1"
-    assert leads is None
-    assert ventas is None
-    assert monto is None
-    assert inversion == 30.0
+    assert filas == [("Julio 2026", "Campaña Julio", "camp_1", 30.0)]
+
+
+def test_usa_fecha_inicio_de_campana_cuando_esta_disponible(conn):
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 15), "facebook", 10.0, fecha_inicio_campana=datetime.date(2026, 4, 3))],
+    )
+
+    ruta = generar_roi_campanas(conn, tmp_path_factory_roi())
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+
+    assert ws[2][0].value == "Abril 2026"
+
+
+def test_usa_fecha_de_publicacion_como_respaldo_si_falta_fecha_inicio(conn):
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 3, 10), "facebook", 10.0, fecha_inicio_campana=None)],
+    )
+
+    ruta = generar_roi_campanas(conn, tmp_path_factory_roi())
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+
+    assert ws[2][0].value == "Marzo 2026"
 
 
 def test_dos_campanas_distintas_generan_dos_filas(conn):
@@ -70,60 +107,7 @@ def test_dos_campanas_distintas_generan_dos_filas(conn):
     assert sorted(ids) == ["camp_a", "camp_b"]
 
 
-def test_escribe_formulas_para_costo_por_venta_ticket_tasa_y_roi(conn):
-    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
-
-    ruta = generar_roi_campanas(conn, tmp_path_factory_roi())
-    wb = openpyxl.load_workbook(ruta)
-    ws = wb.active
-    fila = ws[2]
-
-    assert fila[7].value == '=IFERROR(G2/E2,"")'
-    assert fila[8].value == '=IFERROR(F2/E2,"")'
-    assert fila[9].value == '=IFERROR(E2/D2,"")'
-    assert fila[10].value == '=IFERROR((F2-G2)/G2,"")'
-
-
-def test_encabezados_manuales_se_respetan_si_la_usuaria_los_renombra(conn):
-    """Caso real: la usuaria renombró D/E/F a "Cantidad de Leads"/"Cantidad
-    de VEntas"/"Monto total de cierre" directamente en el Excel. Esos
-    encabezados no deben volver a su nombre original en la próxima corrida."""
-    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
-    ruta = tmp_path_factory_roi()
-    generar_roi_campanas(conn, ruta)
-
-    wb = openpyxl.load_workbook(ruta)
-    ws = wb.active
-    ws["D1"] = "Cantidad de Leads"
-    ws["E1"] = "Cantidad de VEntas"
-    wb.save(ruta)
-
-    generar_roi_campanas(conn, ruta)
-
-    wb2 = openpyxl.load_workbook(ruta)
-    ws2 = wb2.active
-    assert ws2["D1"].value == "Cantidad de Leads"
-    assert ws2["E1"].value == "Cantidad de VEntas"
-
-
-def test_encabezados_automaticos_se_actualizan_siempre(conn):
-    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
-    ruta = tmp_path_factory_roi()
-    generar_roi_campanas(conn, ruta)
-
-    wb = openpyxl.load_workbook(ruta)
-    ws = wb.active
-    ws["H1"] = "texto viejo que ya no aplica"
-    wb.save(ruta)
-
-    generar_roi_campanas(conn, ruta)
-
-    wb2 = openpyxl.load_workbook(ruta)
-    ws2 = wb2.active
-    assert ws2["H1"].value == "Costo por venta"
-
-
-def test_preserva_datos_manuales_al_regenerar_aunque_cambie_el_orden(conn):
+def test_rerun_actualiza_la_inversion_sin_duplicar_filas(conn):
     upsert_meta_ads(
         conn,
         [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Campaña A", id_campana="camp_a")],
@@ -131,55 +115,17 @@ def test_preserva_datos_manuales_al_regenerar_aunque_cambie_el_orden(conn):
     ruta = tmp_path_factory_roi()
     generar_roi_campanas(conn, ruta)
 
-    wb = openpyxl.load_workbook(ruta)
-    ws = wb.active
-    ws["D2"] = 3  # cierres
-    ws["E2"] = 2  # no cierres
-    ws["F2"] = 1500.0  # monto de cierre
-    wb.save(ruta)
-
-    # Se agrega una campaña nueva cuyo nombre la ordena ANTES alfabéticamente,
-    # para asegurar que el valor manual no se "pegue" por posición de fila.
     upsert_meta_ads(
         conn,
-        [_registro(datetime.date(2026, 7, 1), "facebook", 999.0, campana="Campaña AAA nueva", id_campana="camp_nueva")],
+        [_registro(datetime.date(2026, 7, 2), "facebook", 25.0, campana="Campaña A", id_campana="camp_a")],
     )
-    generar_roi_campanas(conn, ruta)
-
-    wb2 = openpyxl.load_workbook(ruta)
-    ws2 = wb2.active
-    filas = {fila[2]: fila for fila in ws2.iter_rows(min_row=2, values_only=True)}
-
-    assert filas["camp_a"][3:6] == (3, 2, 1500.0)
-    assert filas["camp_nueva"][3:6] == (None, None, None)
-
-
-def test_rerun_del_mismo_rango_sin_campanas_nuevas_no_toca_las_columnas_manuales(conn):
-    """Caso real reportado por la usuaria: corrió el backfill de nuevo sobre
-    un rango que ya incluía campañas con datos manuales cargados, y esos
-    datos desaparecieron. Esto simula exactamente eso: regenerar sin agregar
-    ninguna campaña nueva."""
-    upsert_meta_ads(
-        conn,
-        [_registro(datetime.date(2026, 4, 1), "facebook", 50.0, campana="Campaña Abril", id_campana="camp_abril")],
-    )
-    ruta = tmp_path_factory_roi()
     generar_roi_campanas(conn, ruta)
 
     wb = openpyxl.load_workbook(ruta)
     ws = wb.active
-    ws["D2"] = 5
-    ws["E2"] = 1
-    ws["F2"] = 3000.0
-    wb.save(ruta)
+    filas = list(ws.iter_rows(min_row=2, values_only=True))
 
-    # Re-correr exactamente el mismo rango (mismo conector, mismos datos) —
-    # no agrega nada nuevo a la base.
-    generar_roi_campanas(conn, ruta)
-
-    wb2 = openpyxl.load_workbook(ruta)
-    ws2 = wb2.active
-    assert (ws2["D2"].value, ws2["E2"].value, ws2["F2"].value) == (5, 1, 3000.0)
+    assert filas == [("Julio 2026", "Campaña A", "camp_a", 75.0)]
 
 
 def tmp_path_factory_roi():
