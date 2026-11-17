@@ -179,6 +179,37 @@ def test_rerun_del_mismo_rango_sin_campanas_nuevas_no_toca_nombre_producto(conn)
     assert ws2["E2"].value == "Producto X"
 
 
+def test_archivo_con_esquema_viejo_de_4_columnas_se_reconstruye_sin_duplicar(conn):
+    """Bug real reportado por la usuaria: un archivo generado antes de
+    agregar Unidad/Nombre_Producto (4 columnas: Mes, Campaña, ID de
+    campaña, Inversión total) hacía que el matcheo por ID buscara en la
+    columna equivocada (la nueva columna D es Unidad, no ID) — como nunca
+    encontraba coincidencias, duplicaba todas las campañas al final con el
+    esquema nuevo."""
+    ruta = tmp_path_factory_roi()
+    wb_viejo = openpyxl.Workbook()
+    ws_viejo = wb_viejo.active
+    ws_viejo.append(["Mes", "Campaña", "ID de campaña", "Inversión total"])
+    ws_viejo.append(["Julio 2026", "Campaña A", "camp_a", 999.0])
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    wb_viejo.save(ruta)
+
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Campaña A", id_campana="camp_a")],
+    )
+    generar_roi_campanas(conn, ruta)
+
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+    filas = list(ws.iter_rows(min_row=2, values_only=True))
+
+    assert [c.value for c in ws[1]] == [
+        "Mes", "Unidad", "Campaña", "ID de campaña", "Nombre_Producto", "Inversión total",
+    ]
+    assert filas == [("Julio 2026", "CAINCO", "Campaña A", "camp_a", None, 50.0)]
+
+
 def tmp_path_factory_roi():
     import tempfile
     from pathlib import Path

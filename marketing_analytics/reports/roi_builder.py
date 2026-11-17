@@ -55,10 +55,18 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
         """
     ).fetchall()
 
-    if ruta_salida.exists():
-        wb = load_workbook(ruta_salida)
-        ws = wb.active
-    else:
+    wb = load_workbook(ruta_salida) if ruta_salida.exists() else None
+    ws = wb.active if wb is not None else None
+
+    if ws is None or not _tiene_columnas_esperadas(ws):
+        # Archivo nuevo, o de una versión anterior cuyas columnas no
+        # coinciden con el esquema actual (por ejemplo, antes de agregar
+        # Unidad/Nombre_Producto). Si siguiéramos editándolo en sitio, el
+        # matcheo por ID buscaría en la columna equivocada y duplicaría
+        # todo — más seguro reconstruirlo de cero. No hay nada manual que
+        # perder: Nombre_Producto es la única columna manual y, si el
+        # archivo tiene un esquema viejo, es porque esa columna todavía no
+        # existía.
         wb = Workbook()
         ws = wb.active
         ws.title = "ROI Campañas"
@@ -92,6 +100,17 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
     wb.save(ruta_salida)
     return ruta_salida
+
+
+def _tiene_columnas_esperadas(ws: Worksheet) -> bool:
+    # Compara por CANTIDAD de encabezados, no por texto — Sandy puede
+    # renombrar columnas (por ejemplo "Nombre_Producto" a "Producto") y eso
+    # no debe disparar una reconstrucción. Lo que sí importa es si el
+    # archivo tiene la misma cantidad de columnas que el esquema actual;
+    # si tiene menos (por ejemplo, de antes de agregar Unidad), el ID de
+    # campaña ya no está en la posición que este código espera.
+    encabezados_con_valor = sum(1 for celda in ws[1] if celda.value is not None)
+    return encabezados_con_valor == len(_ENCABEZADOS)
 
 
 def _mes_legible(fecha_texto: str | None) -> str:
