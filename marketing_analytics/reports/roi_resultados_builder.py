@@ -24,11 +24,12 @@ Hoja "ROI Resultados" (por campaña):
 
 Hoja "Resumen por Evento" (por Nombre de evento):
     Inversión total se recalcula en cada corrida, sumando todas las
-    campañas con ese nombre de evento. Leads, Subscribers y Revenue son
-    manuales, protegidos igual que en la otra hoja pero emparejando por
-    "Nombre de evento" en vez de por ID de campaña. Costo por lead, % de
-    conversión y ROI son fórmulas de Excel, se recalculan solas al
-    escribir:
+    campañas con ese nombre de evento. Tipo y Unidad también son
+    automáticos acá (se toman de cualquiera de las campañas del evento en
+    "ROI Resultados"). Leads, Subscribers y Revenue son manuales,
+    protegidos igual que en la otra hoja pero emparejando por "Nombre de
+    evento" en vez de por ID de campaña. Costo por lead, % de conversión y
+    ROI son fórmulas de Excel, se recalculan solas al escribir:
         Costo por lead = Inversión total ÷ Leads
         % de conversión = Subscribers ÷ Leads
         ROI = (Revenue − Inversión total) ÷ Inversión total
@@ -67,17 +68,19 @@ FORMATO_PORCENTAJE = "0.0%"
 
 HOJA_RESUMEN = "Resumen por Evento"
 ENCABEZADOS_RESUMEN = [
-    "Nombre de evento", "Inversión total", "Leads", "Subscribers", "Revenue",
+    "Nombre de evento", "Tipo", "Unidad", "Inversión total", "Leads", "Subscribers", "Revenue",
     "Costo por lead", "% de conversión", "ROI",
 ]
 COL_R_NOMBRE = 1
-COL_R_INVERSION = 2
-COL_R_LEADS = 3
-COL_R_SUBSCRIBERS = 4
-COL_R_REVENUE = 5
-COL_R_COSTO_POR_LEAD = 6
-COL_R_PORCENTAJE_CONVERSION = 7
-COL_R_ROI = 8
+COL_R_TIPO = 2
+COL_R_UNIDAD = 3
+COL_R_INVERSION = 4
+COL_R_LEADS = 5
+COL_R_SUBSCRIBERS = 6
+COL_R_REVENUE = 7
+COL_R_COSTO_POR_LEAD = 8
+COL_R_PORCENTAJE_CONVERSION = 9
+COL_R_ROI = 10
 SIN_ASIGNAR = "(Sin asignar)"
 
 
@@ -129,12 +132,15 @@ def generar_roi_resultados(ruta_roi_campanas: str | Path, ruta_salida: str | Pat
 
 
 def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet) -> None:
-    inversion_por_evento: dict[str, float] = {}
+    datos_por_evento: dict[str, dict] = {}
     for fila in ws_campanas.iter_rows(min_row=2, values_only=True):
         nombre_evento = fila[COL_NOMBRE_EVENTO - 1] or SIN_ASIGNAR
-        inversion_por_evento[nombre_evento] = inversion_por_evento.get(nombre_evento, 0.0) + (
-            fila[COL_INVERSION - 1] or 0
-        )
+        datos = datos_por_evento.setdefault(nombre_evento, {"inversion": 0.0, "tipo": None, "unidad": None})
+        datos["inversion"] += fila[COL_INVERSION - 1] or 0
+        if datos["tipo"] is None and fila[COL_TIPO - 1]:
+            datos["tipo"] = fila[COL_TIPO - 1]
+        if datos["unidad"] is None and fila[COL_UNIDAD - 1]:
+            datos["unidad"] = fila[COL_UNIDAD - 1]
 
     ws = wb[HOJA_RESUMEN] if HOJA_RESUMEN in wb.sheetnames else None
     if ws is not None and not tiene_columnas_esperadas(ws, ENCABEZADOS_RESUMEN):
@@ -161,7 +167,7 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet) -> None
     filas_a_eliminar = [
         fila
         for nombre_evento, fila in fila_por_nombre.items()
-        if nombre_evento not in inversion_por_evento
+        if nombre_evento not in datos_por_evento
         and all(
             ws.cell(row=fila, column=columna).value is None
             for columna in (COL_R_LEADS, COL_R_SUBSCRIBERS, COL_R_REVENUE)
@@ -177,19 +183,22 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet) -> None
             if nombre_celda is not None:
                 fila_por_nombre[nombre_celda] = fila_celdas[0].row
 
-    for nombre_evento in sorted(set(inversion_por_evento) | set(fila_por_nombre), key=str):
-        # Inversión de un evento huérfano con datos manuales (no se borró
-        # arriba): ya no tiene campañas, así que queda en 0.
-        inversion = inversion_por_evento.get(nombre_evento, 0.0)
+    for nombre_evento in sorted(set(datos_por_evento) | set(fila_por_nombre), key=str):
+        # Datos de un evento huérfano con datos manuales (no se borró
+        # arriba): ya no tiene campañas, así que inversión/tipo/unidad
+        # quedan vacíos.
+        datos = datos_por_evento.get(nombre_evento, {"inversion": 0.0, "tipo": None, "unidad": None})
         fila = fila_por_nombre.get(nombre_evento)
         if fila is None:
             fila = ws.max_row + 1
             fila_por_nombre[nombre_evento] = fila
             ws.cell(row=fila, column=COL_R_NOMBRE, value=nombre_evento)
 
-        # Automática: Inversión total. Leads en adelante (manuales) jamás
-        # se leen ni se escriben acá.
-        celda_inversion = ws.cell(row=fila, column=COL_R_INVERSION, value=inversion)
+        # Automáticas: Tipo, Unidad, Inversión total. Leads en adelante
+        # (manuales) jamás se leen ni se escriben acá.
+        ws.cell(row=fila, column=COL_R_TIPO, value=datos["tipo"])
+        ws.cell(row=fila, column=COL_R_UNIDAD, value=datos["unidad"])
+        celda_inversion = ws.cell(row=fila, column=COL_R_INVERSION, value=datos["inversion"])
         celda_inversion.number_format = FORMATO_MONEDA
         _escribir_formulas_resumen(ws, fila)
 
@@ -197,10 +206,10 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet) -> None
 
 
 def _escribir_formulas_resumen(ws: Worksheet, fila: int) -> None:
-    inversion = f"B{fila}"
-    leads = f"C{fila}"
-    subscribers = f"D{fila}"
-    revenue = f"E{fila}"
+    inversion = f"D{fila}"
+    leads = f"E{fila}"
+    subscribers = f"F{fila}"
+    revenue = f"G{fila}"
 
     celda_costo = ws.cell(row=fila, column=COL_R_COSTO_POR_LEAD, value=f'=IFERROR({inversion}/{leads},"")')
     celda_costo.number_format = FORMATO_MONEDA

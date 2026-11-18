@@ -11,7 +11,7 @@ from marketing_analytics.reports.roi_resultados_builder import generar_roi_resul
 
 _ENCABEZADOS = ["Mes", "Campaña", "ID de campaña", "Inversión total", "Nombre de evento", "Tipo", "Unidad"]
 _ENCABEZADOS_RESUMEN = [
-    "Nombre de evento", "Inversión total", "Leads", "Subscribers", "Revenue",
+    "Nombre de evento", "Tipo", "Unidad", "Inversión total", "Leads", "Subscribers", "Revenue",
     "Costo por lead", "% de conversión", "ROI",
 ]
 
@@ -139,7 +139,7 @@ def test_resumen_por_evento_agrupa_varias_campanas_del_mismo_evento(conn):
 
     wb = openpyxl.load_workbook(ruta_resultados)
     ws = wb.active
-    _asignar_evento(ws, "camp_1", "Foro A")
+    _asignar_evento(ws, "camp_1", "Foro A", tipo="Curso", unidad="Academy")
     _asignar_evento(ws, "camp_2", "Foro A")
     wb.save(ruta_resultados)
 
@@ -151,7 +151,10 @@ def test_resumen_por_evento_agrupa_varias_campanas_del_mismo_evento(conn):
 
     assert [c.value for c in resumen[1]] == _ENCABEZADOS_RESUMEN
     assert filas == [
-        ("Foro A", 80.0, None, None, None, '=IFERROR(B2/C2,"")', '=IFERROR(D2/C2,"")', '=IFERROR((E2-B2)/B2,"")')
+        (
+            "Foro A", "Curso", "Academy", 80.0, None, None, None,
+            '=IFERROR(D2/E2,"")', '=IFERROR(F2/E2,"")', '=IFERROR((G2-D2)/D2,"")',
+        )
     ]
 
 
@@ -167,7 +170,10 @@ def test_resumen_por_evento_sin_asignar(conn):
     filas = list(resumen.iter_rows(min_row=2, values_only=True))
 
     assert filas == [
-        ("(Sin asignar)", 50.0, None, None, None, '=IFERROR(B2/C2,"")', '=IFERROR(D2/C2,"")', '=IFERROR((E2-B2)/B2,"")')
+        (
+            "(Sin asignar)", None, None, 50.0, None, None, None,
+            '=IFERROR(D2/E2,"")', '=IFERROR(F2/E2,"")', '=IFERROR((G2-D2)/D2,"")',
+        )
     ]
 
 
@@ -187,9 +193,9 @@ def test_resumen_por_evento_escribe_formulas(conn):
     resumen = wb2["Resumen por Evento"]
     fila = resumen[2]
 
-    assert fila[5].value == '=IFERROR(B2/C2,"")'
-    assert fila[6].value == '=IFERROR(D2/C2,"")'
-    assert fila[7].value == '=IFERROR((E2-B2)/B2,"")'
+    assert fila[7].value == '=IFERROR(D2/E2,"")'
+    assert fila[8].value == '=IFERROR(F2/E2,"")'
+    assert fila[9].value == '=IFERROR((G2-D2)/D2,"")'
 
 
 def test_rerun_actualiza_inversion_del_resumen_y_preserva_leads_subscribers_revenue(conn):
@@ -204,15 +210,15 @@ def test_rerun_actualiza_inversion_del_resumen_y_preserva_leads_subscribers_reve
     generar_roi_resultados(ruta_roi, ruta_resultados)
 
     wb = openpyxl.load_workbook(ruta_resultados)
-    _asignar_evento(wb.active, "camp_a", "Foro A")
+    _asignar_evento(wb.active, "camp_a", "Foro A", tipo="Curso", unidad="Academy")
     wb.save(ruta_resultados)
     generar_roi_resultados(ruta_roi, ruta_resultados)
 
     wb = openpyxl.load_workbook(ruta_resultados)
     resumen = wb["Resumen por Evento"]
-    resumen["C2"] = 120  # Leads
-    resumen["D2"] = 30  # Subscribers
-    resumen["E2"] = 4500.0  # Revenue
+    resumen["E2"] = 120  # Leads
+    resumen["F2"] = 30  # Subscribers
+    resumen["G2"] = 4500.0  # Revenue
     wb.save(ruta_resultados)
 
     upsert_meta_ads(
@@ -225,7 +231,7 @@ def test_rerun_actualiza_inversion_del_resumen_y_preserva_leads_subscribers_reve
     wb2 = openpyxl.load_workbook(ruta_resultados)
     fila = list(wb2["Resumen por Evento"].iter_rows(min_row=2, values_only=True))[0]
 
-    assert fila[:5] == ("Foro A", 999.0, 120, 30, 4500.0)
+    assert fila[:7] == ("Foro A", "Curso", "Academy", 999.0, 120, 30, 4500.0)
 
 
 def test_evento_reasignado_no_deja_fila_fantasma_sin_datos_manuales(conn):
