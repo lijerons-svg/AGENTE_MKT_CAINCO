@@ -26,6 +26,7 @@ from marketing_analytics.dashboard.control_contenido.builder import generar_cont
 from marketing_analytics.database.configuracion import registrar_fecha_hasta
 from marketing_analytics.database.connection import get_connection
 from marketing_analytics.reports.excel_builder import generar_historico_excel
+from marketing_analytics.reports.resultados_producto_builder import generar_resultados_producto
 from marketing_analytics.reports.roi_builder import generar_roi_campanas
 from marketing_analytics.services.log_writer import escribir_log_ejecucion
 from marketing_analytics.services.orchestrator import ejecutar
@@ -102,6 +103,9 @@ def main(config_path: str, env_path: str | None, desde_str: str | None, hasta_st
                 conn, config, output_dir / "ControlContenido.html"
             )
             ruta_roi = generar_roi_campanas(conn, output_dir / "ROI_Campanas.xlsx")
+            ruta_resultados = generar_resultados_producto(
+                ruta_roi, output_dir / "ROI_Resultados.xlsx"
+            )
             ruta_log = escribir_log_ejecucion(conn, resumen, output_dir / "Log_Ejecucion.txt")
     except PermissionError as error:
         click.echo(
@@ -127,6 +131,8 @@ def main(config_path: str, env_path: str | None, desde_str: str | None, hasta_st
     click.echo(f"Generado: {ruta_dashboard}")
     click.echo(f"Generado: {ruta_control_contenido}")
     click.echo(f"Generado: {ruta_roi}")
+    if ruta_resultados is not None:
+        click.echo(f"Generado: {ruta_resultados}")
     click.echo(f"Generado: {ruta_log}")
 
     # ── Publicar ControlContenido.html en GitHub Pages ──────────────────────
@@ -143,8 +149,8 @@ def publicar_github_pages(ruta_html: Path) -> None:
     y que git tenga credenciales configuradas (GitHub CLI, credential manager, etc.).
     Si algo falla, solo muestra un aviso — no interrumpe la corrida.
     """
-    # Ruta del repo de publicación (AGENTE_MKT_CAINCO en tu compu)
-    repo_root = Path(r"C:\Users\sandylu\Claude\Projects\AGENTE_MKT_CAINCO")
+    # Ruta del repo: dos niveles arriba de marketing_analytics/main.py
+    repo_root = Path(__file__).parent.parent.resolve()
     docs_dir = repo_root / "docs"
     destino = docs_dir / "index.html"
 

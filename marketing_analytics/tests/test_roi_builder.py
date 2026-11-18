@@ -6,10 +6,7 @@ from marketing_analytics.database.repository import upsert_meta_ads
 from marketing_analytics.models.records import MetaAdsRegistro
 from marketing_analytics.reports.roi_builder import generar_roi_campanas
 
-_ENCABEZADOS = [
-    "Mes", "Campaña", "ID de campaña", "Inversión total",
-    "Unidad", "Tipo de campaña", "Nombre_Producto", "Leads", "Inscritos", "Venta total USD",
-]
+_ENCABEZADOS = ["Mes", "Campaña", "ID de campaña", "Inversión total", "Unidad", "Tipo de campaña", "Nombre_Producto"]
 
 
 def _registro(
@@ -59,7 +56,7 @@ def test_campana_nueva_tiene_columnas_manuales_vacias(conn):
     ws = wb.active
     fila = list(ws.iter_rows(min_row=2, values_only=True))[0]
 
-    assert fila == ("Julio 2026", "Campaña Julio", "camp_1", 10.0, None, None, None, None, None, None)
+    assert fila == ("Julio 2026", "Campaña Julio", "camp_1", 10.0, None, None, None)
 
 
 def test_agrupa_por_campana_sumando_inversion_de_todos_los_dias_y_redes(conn):
@@ -158,9 +155,6 @@ def test_preserva_columnas_manuales_al_regenerar_aunque_cambie_el_orden(conn):
     ws["E2"] = "Academy"
     ws["F2"] = "Curso"
     ws["G2"] = "Liderazgo"
-    ws["H2"] = 50
-    ws["I2"] = 10
-    ws["J2"] = 1500.0
     wb.save(ruta)
 
     # Campaña nueva que ordenaría ANTES alfabéticamente, para confirmar que
@@ -175,11 +169,11 @@ def test_preserva_columnas_manuales_al_regenerar_aunque_cambie_el_orden(conn):
     ws2 = wb2.active
     filas = {fila[2]: fila for fila in ws2.iter_rows(min_row=2, values_only=True)}
 
-    assert filas["camp_a"][4:] == ("Academy", "Curso", "Liderazgo", 50, 10, 1500.0)
-    assert filas["camp_nueva"][4:] == (None, None, None, None, None, None)
+    assert filas["camp_a"][4:] == ("Academy", "Curso", "Liderazgo")
+    assert filas["camp_nueva"][4:] == (None, None, None)
 
 
-def test_archivo_con_esquema_viejo_de_4_columnas_se_reconstruye_sin_duplicar(conn):
+def test_archivo_con_esquema_viejo_se_reconstruye_sin_duplicar(conn):
     """Si el archivo existente tiene otra cantidad de columnas (de una
     versión anterior del esquema), el matcheo por ID buscaría en la
     columna equivocada y duplicaría todo — en vez de eso, se reconstruye
@@ -205,88 +199,6 @@ def test_archivo_con_esquema_viejo_de_4_columnas_se_reconstruye_sin_duplicar(con
     assert [c.value for c in ws[1]] == _ENCABEZADOS
     assert len(filas) == 1
     assert filas[0][:4] == ("Julio 2026", "Campaña A", "camp_a", 50.0)
-
-
-def _completar_producto(ws, fila, unidad, tipo, nombre_producto):
-    ws.cell(row=fila, column=5, value=unidad)
-    ws.cell(row=fila, column=6, value=tipo)
-    ws.cell(row=fila, column=7, value=nombre_producto)
-
-
-def test_resumen_por_producto_agrupa_varias_campanas_del_mismo_evento(conn):
-    upsert_meta_ads(
-        conn,
-        [
-            _registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Foro A - Arte 1", id_campana="camp_1"),
-            _registro(datetime.date(2026, 7, 1), "facebook", 30.0, campana="Foro A - Arte 2", id_campana="camp_2"),
-        ],
-    )
-    ruta = tmp_path_factory_roi()
-    generar_roi_campanas(conn, ruta)
-
-    wb = openpyxl.load_workbook(ruta)
-    ws = wb.active
-    filas_por_id = {fila[2].value: fila[0].row for fila in ws.iter_rows(min_row=2)}
-    _completar_producto(ws, filas_por_id["camp_1"], "Foros", "Evento", "Foro A")
-    _completar_producto(ws, filas_por_id["camp_2"], "Foros", "Evento", "Foro A")
-    wb.save(ruta)
-
-    generar_roi_campanas(conn, ruta)
-
-    wb2 = openpyxl.load_workbook(ruta)
-    resumen = wb2["Resumen por Producto"]
-    filas = list(resumen.iter_rows(min_row=2, values_only=True))
-
-    assert filas == [("Foro A", "Foros", "Evento", 80.0, None, None, None)]
-
-
-def test_resumen_por_producto_agrupa_sin_asignar(conn):
-    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, id_campana="camp_1")])
-    ruta = tmp_path_factory_roi()
-    generar_roi_campanas(conn, ruta)
-
-    wb = openpyxl.load_workbook(ruta)
-    resumen = wb["Resumen por Producto"]
-    filas = list(resumen.iter_rows(min_row=2, values_only=True))
-
-    assert filas == [("(Sin asignar)", None, None, 50.0, None, None, None)]
-
-
-def test_resumen_por_producto_preserva_leads_inscritos_venta_al_actualizar_inversion(conn):
-    upsert_meta_ads(
-        conn,
-        [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Foro A", id_campana="camp_1")],
-    )
-    ruta = tmp_path_factory_roi()
-    generar_roi_campanas(conn, ruta)
-
-    # Primero asigna el producto en "ROI Campañas" y corre una vez para que
-    # se cree la fila "Foro A" en "Resumen por Producto".
-    wb = openpyxl.load_workbook(ruta)
-    _completar_producto(wb.active, 2, "Foros", "Evento", "Foro A")
-    wb.save(ruta)
-    generar_roi_campanas(conn, ruta)
-
-    # Recién ahí carga los datos manuales, sobre la fila que ya existe.
-    wb = openpyxl.load_workbook(ruta)
-    resumen = wb["Resumen por Producto"]
-    resumen["E2"] = 120  # Leads
-    resumen["F2"] = 30  # Inscritos
-    resumen["G2"] = 4500.0  # Venta total USD
-    wb.save(ruta)
-
-    # La automatización revisa los últimos 7 días y la inversión cambia.
-    upsert_meta_ads(
-        conn,
-        [_registro(datetime.date(2026, 7, 1), "facebook", 999.0, campana="Foro A", id_campana="camp_1")],
-    )
-    generar_roi_campanas(conn, ruta)
-
-    wb2 = openpyxl.load_workbook(ruta)
-    resumen2 = wb2["Resumen por Producto"]
-    fila = list(resumen2.iter_rows(min_row=2, values_only=True))[0]
-
-    assert fila == ("Foro A", "Foros", "Evento", 999.0, 120, 30, 4500.0)
 
 
 def tmp_path_factory_roi():
