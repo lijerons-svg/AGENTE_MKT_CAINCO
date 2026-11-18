@@ -173,11 +173,11 @@ def test_preserva_columnas_manuales_al_regenerar_aunque_cambie_el_orden(conn):
     assert filas["camp_nueva"][4:] == (None, None, None)
 
 
-def test_archivo_con_esquema_viejo_se_reconstruye_sin_duplicar(conn):
-    """Si el archivo existente tiene otra cantidad de columnas (de una
-    versión anterior del esquema), el matcheo por ID buscaría en la
-    columna equivocada y duplicaría todo — en vez de eso, se reconstruye
-    desde cero."""
+def test_archivo_con_columnas_de_menos_las_completa_sin_tocar_filas(conn):
+    """Si el archivo existente le falta alguna columna (por ejemplo, de
+    antes de que existiera), esa columna se agrega al final y las filas
+    que ya había se actualizan por ID, nunca se reconstruyen ni se
+    duplican."""
     ruta = tmp_path_factory_roi()
     wb_viejo = openpyxl.Workbook()
     ws_viejo = wb_viejo.active
@@ -199,6 +199,44 @@ def test_archivo_con_esquema_viejo_se_reconstruye_sin_duplicar(conn):
     assert [c.value for c in ws[1]] == _ENCABEZADOS
     assert len(filas) == 1
     assert filas[0][:4] == ("Julio 2026", "Campaña A", "camp_a", 50.0)
+
+
+def test_agregar_columna_nueva_al_esquema_no_borra_datos_manuales_existentes(conn):
+    """Bug real de QA: antes, agregar una columna nueva al esquema cambiaba
+    la CANTIDAD de columnas, eso disparaba una reconstrucción completa de
+    la hoja y borraba todos los datos manuales ya cargados. Ahora la
+    columna nueva se agrega al final y todo lo demás queda intacto."""
+    ruta = tmp_path_factory_roi()
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Campaña A", id_campana="camp_a")],
+    )
+    generar_roi_campanas(conn, ruta)
+
+    wb = openpyxl.load_workbook(ruta)
+    ws = wb.active
+    ws["E2"] = "Academy"
+    ws["F2"] = "Curso"
+    ws["G2"] = "Liderazgo"
+    wb.save(ruta)
+
+    # Simula una versión anterior del esquema sin la última columna
+    # (como si "Nombre_Producto" todavía no existiera) y confirma que, al
+    # correr con el esquema completo, esa columna se agrega sin tocar las
+    # que ya estaban ni los datos manuales que ya había.
+    wb2 = openpyxl.load_workbook(ruta)
+    ws2 = wb2.active
+    ws2.delete_cols(7, 1)
+    wb2.save(ruta)
+
+    generar_roi_campanas(conn, ruta)
+
+    wb3 = openpyxl.load_workbook(ruta)
+    ws3 = wb3.active
+    fila = list(ws3.iter_rows(min_row=2, values_only=True))[0]
+
+    assert [c.value for c in ws3[1]] == _ENCABEZADOS
+    assert fila == ("Julio 2026", "Campaña A", "camp_a", 50.0, "Academy", "Curso", None)
 
 
 def tmp_path_factory_roi():

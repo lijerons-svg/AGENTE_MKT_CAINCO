@@ -5,8 +5,8 @@ para que Sandy asigne a mano a qué evento o producto pertenece cada
 campaña (varias campañas pueden ser el mismo producto/evento).
 
 El seguimiento comercial (Leads, Resultados, ROI) vive en un archivo
-separado, ROI_Resultados.xlsx (ver resultados_producto_builder.py), que
-lee este archivo pero nunca lo modifica — así una corrida de uno no puede
+separado, ROI_Resultados.xlsx (ver roi_resultados_builder.py), que lee
+este archivo pero nunca lo modifica — así una corrida de uno no puede
 "chocar" con el otro.
 
 Mes, Campaña, ID de campaña e Inversión total son automáticos y se
@@ -18,10 +18,14 @@ fila (emparejando por "ID de campaña", no por posición). Las campañas
 nuevas se agregan al final, con las columnas manuales vacías para que
 Sandy las complete.
 
-Si el archivo existente tiene una cantidad de columnas distinta a la
-esperada (por ejemplo, de una versión anterior del esquema), se
-reconstruye desde cero en vez de editarlo en sitio — evita que el
-matcheo por ID busque en la columna equivocada y duplique todo.
+Las columnas se ubican por su TEXTO de encabezado (fila 1), nunca por una
+posición fija. Si el archivo ya existe y le falta alguna columna (por
+ejemplo, porque se agregó en una versión nueva del esquema), esa columna
+se agrega al final sin tocar nada de lo que ya había — nunca se reconstruye
+ni se borra una hoja completa por un cambio de esquema. Bug real de QA:
+una versión anterior comparaba CANTIDAD de columnas y, ante cualquier
+diferencia, reconstruía la hoja entera desde cero — eso borró datos
+manuales reales de una usuaria cuando se agregó una columna nueva.
 
 El "Mes" es el de la fecha de inicio real de la campaña en Meta
 (fecha_inicio_campana); si esa fecha no está disponible (campañas cargadas
@@ -76,22 +80,21 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
         """
     ).fetchall()
 
-    wb = load_workbook(ruta_salida) if ruta_salida.exists() else None
-    ws = wb.active if wb is not None else None
-
-    if ws is None or not tiene_columnas_esperadas(ws, ENCABEZADOS):
+    if ruta_salida.exists():
+        wb = load_workbook(ruta_salida)
+        ws = wb.active
+    else:
         wb = Workbook()
         ws = wb.active
         ws.title = "ROI Campañas"
-        ws.append(ENCABEZADOS)
-        for celda in ws[1]:
-            celda.font = Font(bold=True)
+
+    cols = resolver_columnas(ws, ENCABEZADOS)
 
     fila_por_id: dict[str, int] = {}
-    for fila_celdas in ws.iter_rows(min_row=2):
-        id_celda = fila_celdas[COL_ID_CAMPANA - 1].value
+    for fila_idx in range(2, ws.max_row + 1):
+        id_celda = ws.cell(row=fila_idx, column=cols["ID de campaña"]).value
         if id_celda is not None:
-            fila_por_id[id_celda] = fila_celdas[0].row
+            fila_por_id[id_celda] = fila_idx
 
     for campana in campanas:
         id_campana = campana["id_campana_origen"]
@@ -99,13 +102,13 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
         if fila is None:
             fila = ws.max_row + 1
             fila_por_id[id_campana] = fila
-            ws.cell(row=fila, column=COL_ID_CAMPANA, value=id_campana)
+            ws.cell(row=fila, column=cols["ID de campaña"], value=id_campana)
 
         # Automáticas: Mes, Campaña, Inversión total. Las columnas manuales
         # (Unidad en adelante) jamás se leen ni se escriben acá.
-        ws.cell(row=fila, column=COL_MES, value=_mes_legible(campana["mes_referencia"]))
-        ws.cell(row=fila, column=COL_CAMPANA, value=campana["campana"])
-        celda_inversion = ws.cell(row=fila, column=COL_INVERSION, value=campana["inversion_total"])
+        ws.cell(row=fila, column=cols["Mes"], value=_mes_legible(campana["mes_referencia"]))
+        ws.cell(row=fila, column=cols["Campaña"], value=campana["campana"])
+        celda_inversion = ws.cell(row=fila, column=cols["Inversión total"], value=campana["inversion_total"])
         celda_inversion.number_format = FORMATO_MONEDA
 
     autoajustar_columnas(ws)
@@ -114,14 +117,25 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
     return ruta_salida
 
 
-def tiene_columnas_esperadas(ws: Worksheet, encabezados_esperados: list[str]) -> bool:
-    # Compara por CANTIDAD de encabezados, no por texto — Sandy puede
-    # renombrar columnas y eso no debe disparar una reconstrucción. Lo que
-    # importa es si tiene la misma cantidad de columnas que el esquema
-    # actual; si tiene menos, alguna columna clave ya no está en la
-    # posición que este código espera.
-    encabezados_con_valor = sum(1 for celda in ws[1] if celda.value is not None)
-    return encabezados_con_valor == len(encabezados_esperados)
+def resolver_columnas(ws: Worksheet, encabezados_requeridos: list[str]) -> dict[str, int]:
+    """Devuelve {texto_de_encabezado: columna} buscando en la fila 1 por
+    TEXTO, no por posición fija. Cualquier encabezado de
+    `encabezados_requeridos` que todavía no exista en la hoja (por
+    ejemplo, una columna agregada en una versión nueva del esquema) se
+    crea al final — nunca se borra ni se reconstruye nada de lo que ya
+    había. Si Sandy renombra una columna existente (de las que no están en
+    `encabezados_requeridos`, como una manual), esa columna no se toca."""
+    columnas: dict[str, int] = {}
+    for celda in ws[1]:
+        if celda.value is not None:
+            columnas[celda.value] = celda.column
+    for nombre in encabezados_requeridos:
+        if nombre not in columnas:
+            nueva_columna = (max(columnas.values()) if columnas else 0) + 1
+            celda = ws.cell(row=1, column=nueva_columna, value=nombre)
+            celda.font = Font(bold=True)
+            columnas[nombre] = nueva_columna
+    return columnas
 
 
 def _mes_legible(fecha_texto: str | None) -> str:
