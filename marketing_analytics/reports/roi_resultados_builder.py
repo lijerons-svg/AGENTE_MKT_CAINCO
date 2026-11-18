@@ -1,10 +1,9 @@
 """Genera ROI_Resultados.xlsx: las mismas filas que ROI_Campanas.xlsx (una
-por campaña), más columnas de carga manual para seguimiento comercial
-(Nombre de evento, Tipo, Unidad, Leads, Subscribers, Revenue) y métricas
-calculadas con fórmula de Excel (Costo por lead, % de conversión, ROI).
-También arma una segunda hoja, "Resumen por Evento", que agrupa las
-campañas por "Nombre de evento" (varias campañas pueden ser el mismo
-evento) sumando Inversión/Leads/Subscribers/Revenue.
+por campaña), más columnas de carga manual para clasificar cada campaña
+(Nombre de evento, Tipo, Unidad). Los resultados comerciales en sí (Leads,
+Subscribers, Revenue) se cargan una sola vez por evento, en la segunda
+hoja "Resumen por Evento" — no por campaña, porque son resultados del
+evento en general, no de cada campaña individual.
 
 Este archivo es un archivo SEPARADO de ROI_Campanas.xlsx a propósito: LEE
 ese archivo para saber Mes/Campaña/Inversión de cada campaña, pero nunca
@@ -12,26 +11,31 @@ lo modifica. Así, una corrida de este archivo no puede "chocar" con
 ROI_Campanas.xlsx, ni viceversa — son dos procesos independientes que
 comparten una sola fuente de lectura.
 
-Mes, Campaña e Inversión total se recalculan en cada corrida (así absorbe
-solo la revisión de los últimos 7 días que hace la automatización cada
-mañana). Nombre de evento, Tipo, Unidad, Leads, Subscribers y Revenue son
-manuales — Sandy los completa a mano — así que si el archivo ya existe se
-abre y se edita EN SITIO: esas celdas de una fila que ya existía NUNCA se
-leen ni se reescriben, solo se actualizan las columnas automáticas de esa
-fila (emparejando por "ID de campaña", no por posición). Las campañas
-nuevas se agregan al final, con las columnas manuales vacías para que
-Sandy las complete.
+Hoja "ROI Resultados" (por campaña):
+    Mes, Campaña e Inversión total se recalculan en cada corrida (así
+    absorbe sola la revisión de los últimos 7 días que hace la
+    automatización cada mañana). Nombre de evento, Tipo y Unidad son
+    manuales — Sandy los completa a mano — así que si el archivo ya
+    existe se abre y se edita EN SITIO: esas celdas de una fila que ya
+    existía NUNCA se leen ni se reescriben, solo se actualizan las
+    columnas automáticas de esa fila (emparejando por "ID de campaña", no
+    por posición). Las campañas nuevas se agregan al final, con las
+    columnas manuales vacías para que Sandy las complete.
 
-Costo por lead, % de conversión y ROI son fórmulas de Excel (no valores
-fijos), así que se recalculan solas en el momento en que Sandy escribe un
-valor en Leads/Subscribers/Revenue, sin esperar a la próxima corrida:
-    Costo por lead = Inversión total ÷ Leads
-    % de conversión = Subscribers ÷ Leads
-    ROI = (Revenue − Inversión total) ÷ Inversión total
-
-La hoja "Resumen por Evento" no tiene ninguna columna manual propia — es
-una suma de lo que Sandy ya cargó por campaña — así que se reconstruye
-entera en cada corrida, sin nada que preservar ni riesgo de desalineación.
+Hoja "Resumen por Evento" (por Nombre de evento):
+    Inversión total se recalcula en cada corrida, sumando todas las
+    campañas con ese nombre de evento. Leads, Subscribers y Revenue son
+    manuales, protegidos igual que en la otra hoja pero emparejando por
+    "Nombre de evento" en vez de por ID de campaña. Costo por lead, % de
+    conversión y ROI son fórmulas de Excel, se recalculan solas al
+    escribir:
+        Costo por lead = Inversión total ÷ Leads
+        % de conversión = Subscribers ÷ Leads
+        ROI = (Revenue − Inversión total) ÷ Inversión total
+    Las campañas sin evento asignado todavía se agrupan bajo
+    "(Sin asignar)". Si un evento deja de tener campañas (porque se
+    reasignaron) y no tiene datos manuales cargados, su fila se elimina en
+    vez de quedar como un fantasma con el monto viejo.
 """
 from __future__ import annotations
 
@@ -50,21 +54,7 @@ from marketing_analytics.reports.roi_builder import (
     tiene_columnas_esperadas,
 )
 
-ENCABEZADOS = [
-    "Mes",
-    "Campaña",
-    "ID de campaña",
-    "Inversión total",
-    "Nombre de evento",
-    "Tipo",
-    "Unidad",
-    "Leads",
-    "Subscribers",
-    "Revenue",
-    "Costo por lead",
-    "% de conversión",
-    "ROI",
-]
+ENCABEZADOS = ["Mes", "Campaña", "ID de campaña", "Inversión total", "Nombre de evento", "Tipo", "Unidad"]
 COL_MES = 1
 COL_CAMPANA = 2
 COL_ID_CAMPANA = 3
@@ -72,12 +62,6 @@ COL_INVERSION = 4
 COL_NOMBRE_EVENTO = 5
 COL_TIPO = 6
 COL_UNIDAD = 7
-COL_LEADS = 8
-COL_SUBSCRIBERS = 9
-COL_REVENUE = 10
-COL_COSTO_POR_LEAD = 11
-COL_PORCENTAJE_CONVERSION = 12
-COL_ROI = 13
 FORMATO_MONEDA = '"$"#,##0.00'
 FORMATO_PORCENTAJE = "0.0%"
 
@@ -86,6 +70,14 @@ ENCABEZADOS_RESUMEN = [
     "Nombre de evento", "Inversión total", "Leads", "Subscribers", "Revenue",
     "Costo por lead", "% de conversión", "ROI",
 ]
+COL_R_NOMBRE = 1
+COL_R_INVERSION = 2
+COL_R_LEADS = 3
+COL_R_SUBSCRIBERS = 4
+COL_R_REVENUE = 5
+COL_R_COSTO_POR_LEAD = 6
+COL_R_PORCENTAJE_CONVERSION = 7
+COL_R_ROI = 8
 SIN_ASIGNAR = "(Sin asignar)"
 
 
@@ -129,8 +121,6 @@ def generar_roi_resultados(ruta_roi_campanas: str | Path, ruta_salida: str | Pat
         celda_inversion = ws.cell(row=fila, column=COL_INVERSION, value=inversion)
         celda_inversion.number_format = FORMATO_MONEDA
 
-        _escribir_formulas(ws, fila)
-
     autoajustar_columnas(ws)
     _actualizar_resumen_por_evento(wb, ws)
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
@@ -138,67 +128,90 @@ def generar_roi_resultados(ruta_roi_campanas: str | Path, ruta_salida: str | Pat
     return ruta_salida
 
 
-def _escribir_formulas(ws: Worksheet, fila: int) -> None:
-    inversion = f"D{fila}"
-    leads = f"H{fila}"
-    subscribers = f"I{fila}"
-    revenue = f"J{fila}"
-
-    celda_costo = ws.cell(row=fila, column=COL_COSTO_POR_LEAD, value=f'=IFERROR({inversion}/{leads},"")')
-    celda_costo.number_format = FORMATO_MONEDA
-
-    celda_conversion = ws.cell(
-        row=fila, column=COL_PORCENTAJE_CONVERSION, value=f'=IFERROR({subscribers}/{leads},"")'
-    )
-    celda_conversion.number_format = FORMATO_PORCENTAJE
-
-    celda_roi = ws.cell(row=fila, column=COL_ROI, value=f'=IFERROR(({revenue}-{inversion})/{inversion},"")')
-    celda_roi.number_format = FORMATO_PORCENTAJE
-
-
 def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet) -> None:
-    """Suma Inversión/Leads/Subscribers/Revenue por Nombre de evento. No
-    tiene ninguna columna manual propia, así que se reconstruye entera
-    cada vez — nada que preservar."""
-    agregados: dict[str, dict] = {}
+    inversion_por_evento: dict[str, float] = {}
     for fila in ws_campanas.iter_rows(min_row=2, values_only=True):
         nombre_evento = fila[COL_NOMBRE_EVENTO - 1] or SIN_ASIGNAR
-        datos = agregados.setdefault(nombre_evento, {"inversion": 0.0, "leads": 0.0, "subscribers": 0.0, "revenue": 0.0})
-        datos["inversion"] += fila[COL_INVERSION - 1] or 0
-        datos["leads"] += fila[COL_LEADS - 1] or 0
-        datos["subscribers"] += fila[COL_SUBSCRIBERS - 1] or 0
-        datos["revenue"] += fila[COL_REVENUE - 1] or 0
+        inversion_por_evento[nombre_evento] = inversion_por_evento.get(nombre_evento, 0.0) + (
+            fila[COL_INVERSION - 1] or 0
+        )
 
-    if HOJA_RESUMEN in wb.sheetnames:
+    ws = wb[HOJA_RESUMEN] if HOJA_RESUMEN in wb.sheetnames else None
+    if ws is not None and not tiene_columnas_esperadas(ws, ENCABEZADOS_RESUMEN):
         del wb[HOJA_RESUMEN]
-    ws = wb.create_sheet(HOJA_RESUMEN)
-    ws.append(ENCABEZADOS_RESUMEN)
-    for celda in ws[1]:
-        celda.font = Font(bold=True)
+        ws = None
+    if ws is None:
+        ws = wb.create_sheet(HOJA_RESUMEN)
+        ws.append(ENCABEZADOS_RESUMEN)
+        for celda in ws[1]:
+            celda.font = Font(bold=True)
 
-    for nombre_evento in sorted(agregados, key=str):
-        datos = agregados[nombre_evento]
-        fila = ws.max_row + 1
-        ws.cell(row=fila, column=1, value=nombre_evento)
-        celda_inv = ws.cell(row=fila, column=2, value=datos["inversion"])
-        celda_inv.number_format = FORMATO_MONEDA
-        ws.cell(row=fila, column=3, value=datos["leads"])
-        ws.cell(row=fila, column=4, value=datos["subscribers"])
-        celda_rev = ws.cell(row=fila, column=5, value=datos["revenue"])
-        celda_rev.number_format = FORMATO_MONEDA
+    fila_por_nombre: dict[str, int] = {}
+    for fila_celdas in ws.iter_rows(min_row=2):
+        nombre_celda = fila_celdas[COL_R_NOMBRE - 1].value
+        if nombre_celda is not None:
+            fila_por_nombre[nombre_celda] = fila_celdas[0].row
 
-        inversion = f"B{fila}"
-        leads = f"C{fila}"
-        subscribers = f"D{fila}"
-        revenue = f"E{fila}"
-        celda_costo = ws.cell(row=fila, column=6, value=f'=IFERROR({inversion}/{leads},"")')
-        celda_costo.number_format = FORMATO_MONEDA
-        celda_conv = ws.cell(row=fila, column=7, value=f'=IFERROR({subscribers}/{leads},"")')
-        celda_conv.number_format = FORMATO_PORCENTAJE
-        celda_roi = ws.cell(row=fila, column=8, value=f'=IFERROR(({revenue}-{inversion})/{inversion},"")')
-        celda_roi.number_format = FORMATO_PORCENTAJE
+    # Filas que ya existían pero cuyo evento ya no tiene campañas (por
+    # ejemplo, porque Sandy reasignó todas sus campañas a otro evento) y
+    # no tienen ningún dato manual cargado: se borran de una, ANTES de
+    # escribir nada más. Si se borraran al final, las filas que quedan más
+    # abajo ya tendrían fórmulas escritas apuntando a su posición vieja
+    # (antes del corrimiento) y quedarían apuntando a la fila equivocada.
+    filas_a_eliminar = [
+        fila
+        for nombre_evento, fila in fila_por_nombre.items()
+        if nombre_evento not in inversion_por_evento
+        and all(
+            ws.cell(row=fila, column=columna).value is None
+            for columna in (COL_R_LEADS, COL_R_SUBSCRIBERS, COL_R_REVENUE)
+        )
+    ]
+    for fila in sorted(filas_a_eliminar, reverse=True):
+        ws.delete_rows(fila, 1)
+
+    if filas_a_eliminar:
+        fila_por_nombre = {}
+        for fila_celdas in ws.iter_rows(min_row=2):
+            nombre_celda = fila_celdas[COL_R_NOMBRE - 1].value
+            if nombre_celda is not None:
+                fila_por_nombre[nombre_celda] = fila_celdas[0].row
+
+    for nombre_evento in sorted(set(inversion_por_evento) | set(fila_por_nombre), key=str):
+        # Inversión de un evento huérfano con datos manuales (no se borró
+        # arriba): ya no tiene campañas, así que queda en 0.
+        inversion = inversion_por_evento.get(nombre_evento, 0.0)
+        fila = fila_por_nombre.get(nombre_evento)
+        if fila is None:
+            fila = ws.max_row + 1
+            fila_por_nombre[nombre_evento] = fila
+            ws.cell(row=fila, column=COL_R_NOMBRE, value=nombre_evento)
+
+        # Automática: Inversión total. Leads en adelante (manuales) jamás
+        # se leen ni se escriben acá.
+        celda_inversion = ws.cell(row=fila, column=COL_R_INVERSION, value=inversion)
+        celda_inversion.number_format = FORMATO_MONEDA
+        _escribir_formulas_resumen(ws, fila)
 
     autoajustar_columnas(ws)
+
+
+def _escribir_formulas_resumen(ws: Worksheet, fila: int) -> None:
+    inversion = f"B{fila}"
+    leads = f"C{fila}"
+    subscribers = f"D{fila}"
+    revenue = f"E{fila}"
+
+    celda_costo = ws.cell(row=fila, column=COL_R_COSTO_POR_LEAD, value=f'=IFERROR({inversion}/{leads},"")')
+    celda_costo.number_format = FORMATO_MONEDA
+
+    celda_conv = ws.cell(
+        row=fila, column=COL_R_PORCENTAJE_CONVERSION, value=f'=IFERROR({subscribers}/{leads},"")'
+    )
+    celda_conv.number_format = FORMATO_PORCENTAJE
+
+    celda_roi = ws.cell(row=fila, column=COL_R_ROI, value=f'=IFERROR(({revenue}-{inversion})/{inversion},"")')
+    celda_roi.number_format = FORMATO_PORCENTAJE
 
 
 def _leer_campanas(ruta_roi_campanas: Path) -> list[tuple[str, str, str, float]]:
