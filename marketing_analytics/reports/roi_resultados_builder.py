@@ -167,7 +167,15 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet, cols_ca
             if nombre_celda is not None:
                 fila_por_nombre[nombre_celda] = fila_idx
 
-    for nombre_evento in sorted(set(datos_por_evento) | set(fila_por_nombre), key=str):
+    # Orden: primero los eventos que ya tenían fila, en el mismo orden en
+    # que ya estaban (por fila, no alfabético); los eventos nuevos se
+    # agregan al final, en el orden en que aparecen por primera vez entre
+    # las campañas (datos_por_evento ya respeta ese orden porque viene de
+    # recorrer "ROI Resultados" fila por fila).
+    orden_existente = [nombre for nombre, _ in sorted(fila_por_nombre.items(), key=lambda par: par[1])]
+    nombres_nuevos = [nombre for nombre in datos_por_evento if nombre not in fila_por_nombre]
+
+    for nombre_evento in orden_existente + nombres_nuevos:
         # Datos de un evento huérfano con datos manuales (no se borró
         # arriba): ya no tiene campañas, así que inversión/tipo/unidad
         # quedan vacíos.

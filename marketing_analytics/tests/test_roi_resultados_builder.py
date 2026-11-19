@@ -257,3 +257,56 @@ def test_evento_reasignado_no_deja_fila_fantasma_sin_datos_manuales(conn):
     nombres = [fila[0] for fila in wb2["Resumen por Evento"].iter_rows(min_row=2, values_only=True)]
 
     assert nombres == ["Evento nuevo"]
+
+
+def test_resumen_mantiene_orden_de_entrada_y_agrega_nuevos_al_final(conn):
+    """El resumen no se reordena alfabéticamente: los eventos que ya
+    tenían fila la mantienen (sin que se muevan ni se toquen sus datos
+    manuales), y los eventos nuevos se agregan al final."""
+    # Los nombres de campaña se eligen para que el orden en ROI_Campanas
+    # (que ordena por campaña) ponga primero a "camp_z"/"Evento Zeta" y
+    # después a "camp_m"/"Evento Alfa" — así, si el resumen todavía
+    # ordenara alfabéticamente por nombre de EVENTO, "Evento Alfa"
+    # aparecería primero, lo cual es justo lo que este test descarta.
+    ruta_roi, ruta_resultados = _rutas()
+    upsert_meta_ads(
+        conn,
+        [
+            _registro(datetime.date(2026, 7, 1), "facebook", 10.0, campana="Campaña 1", id_campana="camp_z"),
+            _registro(datetime.date(2026, 7, 1), "facebook", 20.0, campana="Campaña 2", id_campana="camp_m"),
+        ],
+    )
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb = openpyxl.load_workbook(ruta_resultados)
+    _asignar_evento(wb.active, "camp_z", "Evento Zeta")
+    _asignar_evento(wb.active, "camp_m", "Evento Alfa")
+    wb.save(ruta_resultados)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb2 = openpyxl.load_workbook(ruta_resultados)
+    resumen = wb2["Resumen por Evento"]
+    resumen["E2"] = 5  # Leads de "Evento Zeta", que quedó primero en la hoja
+    wb2.save(ruta_resultados)
+
+    # Llega una campaña de un evento nuevo: debe ir al final, no intercalarse
+    # alfabéticamente entre "Evento Alfa" y "Evento Zeta".
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 1), "facebook", 5.0, campana="Campaña B", id_campana="camp_b")],
+    )
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)  # agrega camp_b a "ROI Resultados" sin evento asignado todavía
+
+    wb3 = openpyxl.load_workbook(ruta_resultados)
+    _asignar_evento(wb3.active, "camp_b", "Evento Beta")
+    wb3.save(ruta_resultados)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb4 = openpyxl.load_workbook(ruta_resultados)
+    resumen4 = wb4["Resumen por Evento"]
+    filas = list(resumen4.iter_rows(min_row=2, values_only=True))
+
+    assert [fila[0] for fila in filas] == ["Evento Zeta", "Evento Alfa", "Evento Beta"]
+    assert filas[0][4] == 5  # Leads de "Evento Zeta" no se movió ni se borró
