@@ -45,6 +45,13 @@ Hoja "Resumen por Evento" (por Nombre de evento):
     "(Sin asignar)". Si un evento deja de tener campañas (porque se
     reasignaron) y no tiene datos manuales cargados, su fila se elimina en
     vez de quedar como un fantasma con el monto viejo.
+
+    El nombre de evento se compara con los espacios colapsados (ver
+    _normalizar_nombre): un espacio de más al cargarlo a mano no debe
+    partir un evento en dos filas. Bug real de QA: " Curso X" (con un
+    espacio adelante) generó una fila nueva en vez de sumarse a la fila
+    ya existente de "Curso X", repartiendo los resultados de un mismo
+    evento en dos filas sin que se notara.
 """
 from __future__ import annotations
 
@@ -65,6 +72,15 @@ ENCABEZADOS_RESUMEN = [
     "Costo por lead", "% de conversión", "ROI",
 ]
 SIN_ASIGNAR = "(Sin asignar)"
+
+
+def _normalizar_nombre(texto: str) -> str:
+    """Colapsa espacios para que un espacio de más no cree un evento
+    duplicado. Bug real de QA: una campaña con "Nombre de evento" cargado
+    con un espacio al principio (" Curso X" en vez de "Curso X") generó
+    una fila nueva en "Resumen por Evento" en vez de sumarse a la fila ya
+    existente — el evento quedó partido en dos filas sin que se notara."""
+    return " ".join(texto.split())
 
 
 def generar_roi_resultados(ruta_roi_campanas: str | Path, ruta_salida: str | Path) -> Path | None:
@@ -121,7 +137,7 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet, cols_ca
 
     datos_por_evento: dict[str, dict] = {}
     for fila in ws_campanas.iter_rows(min_row=2, values_only=True):
-        nombre_evento = fila[col_evento - 1] or SIN_ASIGNAR
+        nombre_evento = _normalizar_nombre(fila[col_evento - 1]) if fila[col_evento - 1] else SIN_ASIGNAR
         datos = datos_por_evento.setdefault(nombre_evento, {"inversion": 0.0, "tipo": None, "unidad": None})
         datos["inversion"] += fila[col_inversion - 1] or 0
         if datos["tipo"] is None and fila[col_tipo - 1]:
@@ -140,7 +156,7 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet, cols_ca
     for fila_idx in range(2, ws.max_row + 1):
         nombre_celda = ws.cell(row=fila_idx, column=col_r_nombre).value
         if nombre_celda is not None:
-            fila_por_nombre[nombre_celda] = fila_idx
+            fila_por_nombre[_normalizar_nombre(nombre_celda)] = fila_idx
 
     # Filas que ya existían pero cuyo evento ya no tiene campañas (por
     # ejemplo, porque Sandy reasignó todas sus campañas a otro evento) y
@@ -165,7 +181,7 @@ def _actualizar_resumen_por_evento(wb: Workbook, ws_campanas: Worksheet, cols_ca
         for fila_idx in range(2, ws.max_row + 1):
             nombre_celda = ws.cell(row=fila_idx, column=col_r_nombre).value
             if nombre_celda is not None:
-                fila_por_nombre[nombre_celda] = fila_idx
+                fila_por_nombre[_normalizar_nombre(nombre_celda)] = fila_idx
 
     # Orden: primero los eventos que ya tenían fila, en el mismo orden en
     # que ya estaban (por fila, no alfabético); los eventos nuevos se
