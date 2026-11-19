@@ -259,6 +259,50 @@ def test_evento_reasignado_no_deja_fila_fantasma_sin_datos_manuales(conn):
     assert nombres == ["Evento nuevo"]
 
 
+def test_espacio_de_mas_en_nombre_de_evento_no_duplica_la_fila(conn):
+    """Bug real de QA: una campaña cargada con " Curso X" (espacio al
+    principio) generaba una fila nueva en vez de sumarse a la fila ya
+    existente de "Curso X", partiendo los resultados de un mismo evento
+    en dos filas."""
+    ruta_roi, ruta_resultados = _rutas()
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Campaña A", id_campana="camp_a")],
+    )
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb = openpyxl.load_workbook(ruta_resultados)
+    _asignar_evento(wb.active, "camp_a", "Curso X")
+    wb.save(ruta_resultados)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb2 = openpyxl.load_workbook(ruta_resultados)
+    resumen = wb2["Resumen por Evento"]
+    resumen["E2"] = 20  # Leads cargados a mano en la fila de "Curso X"
+    wb2.save(ruta_resultados)
+
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 2), "facebook", 30.0, campana="Campaña B", id_campana="camp_b")],
+    )
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb3 = openpyxl.load_workbook(ruta_resultados)
+    _asignar_evento(wb3.active, "camp_b", " Curso X")  # espacio al principio
+    wb3.save(ruta_resultados)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb4 = openpyxl.load_workbook(ruta_resultados)
+    filas = list(wb4["Resumen por Evento"].iter_rows(min_row=2, values_only=True))
+
+    assert len(filas) == 1
+    assert filas[0][0] == "Curso X"
+    assert filas[0][3] == 80.0  # 50 + 30, las dos campañas sumadas en la misma fila
+    assert filas[0][4] == 20  # el Leads cargado a mano no se perdió ni se duplicó
+
+
 def test_resumen_mantiene_orden_de_entrada_y_agrega_nuevos_al_final(conn):
     """El resumen no se reordena alfabéticamente: los eventos que ya
     tenían fila la mantienen (sin que se muevan ni se toquen sus datos
