@@ -66,6 +66,7 @@ ENCABEZADOS = ["Mes", "Campaña", "ID de campaña", "Inversión total", "Nombre 
 FORMATO_MONEDA = '"$"#,##0.00'
 FORMATO_PORCENTAJE = "0.0%"
 
+HOJA_CAMPANAS = "ROI Resultados"
 HOJA_RESUMEN = "Resumen por Evento"
 ENCABEZADOS_RESUMEN = [
     "Nombre de evento", "Tipo", "Unidad", "Inversión total", "Leads", "Subscribers", "Revenue",
@@ -94,11 +95,20 @@ def generar_roi_resultados(ruta_roi_campanas: str | Path, ruta_salida: str | Pat
 
     if ruta_salida.exists():
         wb = load_workbook(ruta_salida)
-        ws = wb.active
+        # Por nombre, NUNCA por "hoja activa" (wb.active): Excel guarda como
+        # "activa" la pestaña que estaba seleccionada la última vez que se
+        # guardó el archivo a mano. Bug real de QA: si Sandy guardaba el
+        # archivo con la pestaña "Resumen por Evento" abierta, wb.active
+        # apuntaba a esa hoja en vez de a "ROI Resultados" — la corrida
+        # terminaba leyendo y escribiendo en la hoja equivocada: "ROI
+        # Resultados" se quedaba congelada con el monto viejo (nunca más se
+        # tocaba) y "Resumen por Evento" se llenaba de columnas y filas de
+        # campaña que no le correspondían.
+        ws = wb[HOJA_CAMPANAS] if HOJA_CAMPANAS in wb.sheetnames else wb.create_sheet(HOJA_CAMPANAS)
     else:
         wb = Workbook()
         ws = wb.active
-        ws.title = "ROI Resultados"
+        ws.title = HOJA_CAMPANAS
 
     cols = resolver_columnas(ws, ENCABEZADOS)
 
@@ -235,7 +245,11 @@ def _escribir_formulas_resumen(ws: Worksheet, fila: int, cols: dict[str, int]) -
 
 def _leer_campanas(ruta_roi_campanas: Path) -> list[tuple[str, str, str, float]]:
     wb = load_workbook(ruta_roi_campanas, data_only=True)
-    ws = wb.active
+    # Por nombre, no por "hoja activa" (ver el comentario en
+    # generar_roi_resultados): ROI_Campanas.xlsx solo tiene una hoja real,
+    # pero wb.active puede apuntar a otra cosa si el archivo se guardó con
+    # otra pestaña seleccionada.
+    ws = wb["ROI Campañas"] if "ROI Campañas" in wb.sheetnames else wb.worksheets[0]
     cols = resolver_columnas(ws, ["Mes", "Campaña", "ID de campaña", "Inversión total"])
     campanas = []
     for fila_idx in range(2, ws.max_row + 1):

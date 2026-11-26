@@ -125,6 +125,47 @@ def test_rerun_actualiza_inversion_y_preserva_clasificacion(conn):
     assert fila == ("Julio 2026", "Campaña A", "camp_a", 999.0, "Foro A", "Curso", "Academy")
 
 
+def test_rerun_actualiza_bien_aunque_la_hoja_activa_sea_resumen(conn):
+    """Bug real de QA: Excel guarda como "hoja activa" la pestaña que
+    estaba seleccionada la última vez que se guardó el archivo a mano. Si
+    Sandy guardaba con "Resumen por Evento" abierto, wb.active apuntaba a
+    esa hoja en vez de a "ROI Resultados" — la corrida terminaba
+    leyendo/escribiendo la hoja equivocada: "ROI Resultados" se quedaba
+    congelada con el monto viejo para siempre, y "Resumen por Evento" se
+    llenaba de columnas que no le correspondían."""
+    ruta_roi, ruta_resultados = _rutas()
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 1), "facebook", 50.0, campana="Campaña A", id_campana="camp_a")],
+    )
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb = openpyxl.load_workbook(ruta_resultados)
+    _asignar_evento(wb.active, "camp_a", "Foro A", tipo="Curso", unidad="Academy")
+    # Simula exactamente lo que hace Excel cuando la usuaria tiene abierta
+    # la otra pestaña al guardar.
+    wb.active = wb["Resumen por Evento"]
+    wb.save(ruta_resultados)
+
+    upsert_meta_ads(
+        conn,
+        [_registro(datetime.date(2026, 7, 2), "facebook", 949.0, campana="Campaña A", id_campana="camp_a")],
+    )
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb2 = openpyxl.load_workbook(ruta_resultados)
+    ws2 = wb2["ROI Resultados"]
+    fila = list(ws2.iter_rows(min_row=2, values_only=True))[0]
+    assert fila == ("Julio 2026", "Campaña A", "camp_a", 999.0, "Foro A", "Curso", "Academy")
+
+    resumen = wb2["Resumen por Evento"]
+    assert [c.value for c in resumen[1]] == _ENCABEZADOS_RESUMEN
+    filas_resumen = list(resumen.iter_rows(min_row=2, values_only=True))
+    assert filas_resumen[0][:4] == ("Foro A", "Curso", "Academy", 999.0)
+
+
 def test_resumen_por_evento_agrupa_varias_campanas_del_mismo_evento(conn):
     ruta_roi, ruta_resultados = _rutas()
     upsert_meta_ads(
