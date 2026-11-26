@@ -60,7 +60,7 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from marketing_analytics.reports.roi_builder import autoajustar_columnas, resolver_columnas
+from marketing_analytics.reports.roi_builder import _MESES, autoajustar_columnas, resolver_columnas
 
 ENCABEZADOS = ["Mes", "Campaña", "ID de campaña", "Inversión total", "Nombre de evento", "Tipo", "Unidad"]
 FORMATO_MONEDA = '"$"#,##0.00'
@@ -73,6 +73,7 @@ ENCABEZADOS_RESUMEN = [
     "Costo por lead", "% de conversión", "ROI",
 ]
 SIN_ASIGNAR = "(Sin asignar)"
+_MESES_INDICE = {nombre: idx + 1 for idx, nombre in enumerate(_MESES)}
 
 
 def _normalizar_nombre(texto: str) -> str:
@@ -261,3 +262,91 @@ def _leer_campanas(ruta_roi_campanas: Path) -> list[tuple[str, str, str, float]]
         inversion = ws.cell(row=fila_idx, column=cols["Inversión total"]).value or 0
         campanas.append((id_campana, mes, campana, inversion))
     return campanas
+
+
+def _parsear_mes(mes_texto: str | None) -> tuple[int, int] | None:
+    """"Julio 2026" -> (2026, 7). None si no se puede interpretar (campaña
+    sin Mes asignado todavía, por ejemplo)."""
+    if not mes_texto:
+        return None
+    partes = mes_texto.strip().split()
+    if len(partes) != 2:
+        return None
+    nombre_mes, anio_texto = partes
+    mes = _MESES_INDICE.get(nombre_mes)
+    if mes is None or not anio_texto.isdigit():
+        return None
+    return (int(anio_texto), mes)
+
+
+def _rango_mes_legible(meses: list[tuple[int, int]]) -> str:
+    """Un evento puede agrupar campañas de varios meses. Arma un texto tipo
+    "Julio 2026" (un solo mes) o "Julio – Noviembre 2026" / "Julio 2026 –
+    Enero 2027" (rango) a partir del mes más antiguo y el más nuevo."""
+    if not meses:
+        return ""
+    inicio, fin = meses[0], meses[-1]
+    if inicio == fin:
+        return f"{_MESES[inicio[1] - 1]} {inicio[0]}"
+    if inicio[0] == fin[0]:
+        return f"{_MESES[inicio[1] - 1]} – {_MESES[fin[1] - 1]} {fin[0]}"
+    return f"{_MESES[inicio[1] - 1]} {inicio[0]} – {_MESES[fin[1] - 1]} {fin[0]}"
+
+
+def _valor_formula(valor):
+    """Costo por lead, % de conversión y ROI son fórmulas con
+    IFERROR(..., "") — cuando faltan Leads, Excel cachea "" (texto), que acá
+    representa "pendiente" igual que None, nunca un cero real."""
+    return None if valor == "" else valor
+
+
+def leer_resumen_por_evento(ruta_roi_resultados: str | Path) -> list[dict]:
+    """Lee "Resumen por Evento" para el tab ROI del dashboard. Esa hoja no
+    tiene columna Mes propia (un evento agrupa campañas de uno o varios
+    meses), así que se cruza con "ROI Resultados" —en el mismo archivo—
+    para armar, por evento, el rango de meses que cubren sus campañas."""
+    ruta_roi_resultados = Path(ruta_roi_resultados)
+    if not ruta_roi_resultados.exists():
+        return []
+
+    wb = load_workbook(ruta_roi_resultados, data_only=True)
+    if HOJA_CAMPANAS not in wb.sheetnames or HOJA_RESUMEN not in wb.sheetnames:
+        return []
+
+    ws_campanas = wb[HOJA_CAMPANAS]
+    cols_campanas = resolver_columnas(ws_campanas, ENCABEZADOS)
+    meses_por_evento: dict[str, set[tuple[int, int]]] = {}
+    for fila in ws_campanas.iter_rows(min_row=2, values_only=True):
+        nombre_evento = fila[cols_campanas["Nombre de evento"] - 1]
+        nombre_evento = _normalizar_nombre(nombre_evento) if nombre_evento else SIN_ASIGNAR
+        mes_tupla = _parsear_mes(fila[cols_campanas["Mes"] - 1])
+        if mes_tupla is not None:
+            meses_por_evento.setdefault(nombre_evento, set()).add(mes_tupla)
+
+    ws_resumen = wb[HOJA_RESUMEN]
+    cols = resolver_columnas(ws_resumen, ENCABEZADOS_RESUMEN)
+
+    eventos = []
+    for fila_idx in range(2, ws_resumen.max_row + 1):
+        nombre = ws_resumen.cell(row=fila_idx, column=cols["Nombre de evento"]).value
+        if nombre is None:
+            continue
+        meses_evento = sorted(meses_por_evento.get(_normalizar_nombre(nombre), set()))
+
+        eventos.append({
+            "nombre_evento": nombre,
+            "tipo": ws_resumen.cell(row=fila_idx, column=cols["Tipo"]).value,
+            "unidad": ws_resumen.cell(row=fila_idx, column=cols["Unidad"]).value,
+            "inversion_total": ws_resumen.cell(row=fila_idx, column=cols["Inversión total"]).value,
+            "leads": ws_resumen.cell(row=fila_idx, column=cols["Leads"]).value,
+            "subscribers": ws_resumen.cell(row=fila_idx, column=cols["Subscribers"]).value,
+            "revenue": ws_resumen.cell(row=fila_idx, column=cols["Revenue"]).value,
+            "costo_por_lead": _valor_formula(ws_resumen.cell(row=fila_idx, column=cols["Costo por lead"]).value),
+            "conversion": _valor_formula(ws_resumen.cell(row=fila_idx, column=cols["% de conversión"]).value),
+            "roi": _valor_formula(ws_resumen.cell(row=fila_idx, column=cols["ROI"]).value),
+            "mes": _rango_mes_legible(meses_evento),
+            "mes_orden": (meses_evento[0][0] * 12 + meses_evento[0][1]) if meses_evento else 0,
+            "meses": [f"{_MESES[m - 1]} {a}" for a, m in meses_evento],
+        })
+
+    return eventos

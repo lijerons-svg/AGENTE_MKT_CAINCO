@@ -29,6 +29,7 @@ _ARCHIVOS_JS = (
     "template_perfiles.js",
     "template_analisis.js",
     "template_mailchimp.js",
+    "template_roi.js",
     "template_main.js",
 )
 
@@ -42,8 +43,9 @@ def generar_control_contenido(
     config: AppConfig,
     ruta_salida: str | Path,
     generado_en: datetime.datetime | None = None,
+    ruta_roi_resultados: str | Path | None = None,
 ) -> Path:
-    datos = construir_datos_control_contenido(conn, config)
+    datos = construir_datos_control_contenido(conn, config, ruta_roi_resultados)
     datos["generado_en"] = (generado_en or datetime.datetime.now()).isoformat()
 
     plantilla = (_DIR / "template.html").read_text(encoding="utf-8")

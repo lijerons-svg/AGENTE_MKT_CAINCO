@@ -6,9 +6,11 @@ llama a ninguna API acá, todo ya está guardado.
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 from marketing_analytics.config.schema import AppConfig
 from marketing_analytics.dashboard.control_contenido.matching import emparejar_unidad_campana
+from marketing_analytics.reports.roi_resultados_builder import leer_resumen_por_evento
 
 
 def _filas_a_dicts(conn: sqlite3.Connection, consulta: str) -> list[dict]:
@@ -28,7 +30,9 @@ def _nuevo_balde() -> dict:
     }
 
 
-def construir_datos_control_contenido(conn: sqlite3.Connection, config: AppConfig) -> dict:
+def construir_datos_control_contenido(
+    conn: sqlite3.Connection, config: AppConfig, ruta_roi_resultados: str | Path | None = None
+) -> dict:
     perfil_a_unidad = {p.nombre: p.unidad for p in config.meta.organico.perfiles}
     alias_a_unidad = {
         p.alias_pauta: (p.unidad, p.alias_pauta_generico) for p in config.meta.organico.perfiles
@@ -127,7 +131,9 @@ def construir_datos_control_contenido(conn: sqlite3.Connection, config: AppConfi
     for fila in mailchimp:
         fila["clics_whatsapp"] = clics_whatsapp_por_campana.get(fila["id_campana_origen"], 0)
 
-    return {"unidades": unidades, "mailchimp": mailchimp}
+    roi_eventos = leer_resumen_por_evento(ruta_roi_resultados) if ruta_roi_resultados else []
+
+    return {"unidades": unidades, "mailchimp": mailchimp, "roi_eventos": roi_eventos}
 
 
 def _agregar_control_perfiles(

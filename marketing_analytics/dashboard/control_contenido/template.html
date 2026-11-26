@@ -26,6 +26,7 @@ __CSS_CONTROL_CONTENIDO__
     <button class="tab-btn" data-tab="perfiles" type="button">Control de Perfiles</button>
     <button class="tab-btn" data-tab="analisis" type="button">Análisis</button>
     <button class="tab-btn" data-tab="mailchimp" type="button">Mailchimp</button>
+    <button class="tab-btn" data-tab="roi" type="button">ROI</button>
   </div>
 </div>
 
@@ -243,6 +244,44 @@ __CSS_CONTROL_CONTENIDO__
         <div id="tabla-mailchimp"></div>
       </section>
     </div>
+  </section>
+
+  <!-- ============ ROI ============ -->
+  <section class="tab-panel" id="tab-roi" data-titulo-impresion="ROI">
+    <div class="aviso">
+      <strong>Alcance de la medición.</strong> El ROI, el costo por lead y el % de conversión solo se calculan
+      para eventos con <strong>Leads, Subscribers y Revenue cargados</strong> — un evento sin esos datos todavía
+      aparece en la tabla (para ver cuánto se invirtió), pero sin esas columnas, no con un cero.
+    </div>
+
+    <div class="barra-filtros">
+      <div class="grupo-filtro">
+        <label>Unidad</label>
+        <div class="chips-filtro" id="chips-unidad-roi"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Año / Mes</label>
+        <div id="drop-mes-roi"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Campaña</label>
+        <input type="search" class="buscador" id="buscar-campana-roi" placeholder="Buscar evento..." />
+      </div>
+    </div>
+
+    <div class="kpis kpis-hero" id="kpis-roi"></div>
+
+    <section class="panel">
+      <h2>ROI por unidad</h2>
+      <p class="subtitulo">Solo eventos con Leads, Subscribers y Revenue cargados.</p>
+      <div id="chart-roi-unidad" class="grafico-alto"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Resumen por evento</h2>
+      <p class="subtitulo">Ordenable por cualquier columna. "—" significa sin datos cargados todavía, no cero.</p>
+      <div id="tabla-roi-eventos"></div>
+    </section>
   </section>
 
 </main>

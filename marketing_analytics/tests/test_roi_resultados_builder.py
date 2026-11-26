@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 import openpyxl
+import pytest
 
 from marketing_analytics.database.repository import upsert_meta_ads
 from marketing_analytics.models.records import MetaAdsRegistro
@@ -395,3 +396,67 @@ def test_resumen_mantiene_orden_de_entrada_y_agrega_nuevos_al_final(conn):
 
     assert [fila[0] for fila in filas] == ["Evento Zeta", "Evento Alfa", "Evento Beta"]
     assert filas[0][4] == 5  # Leads de "Evento Zeta" no se movió ni se borró
+
+
+def test_leer_resumen_por_evento_arma_rango_de_meses_cruzando_con_roi_resultados():
+    from marketing_analytics.reports.roi_resultados_builder import leer_resumen_por_evento
+
+    ruta = Path(tempfile.mkdtemp()) / "ROI_Resultados.xlsx"
+    wb = openpyxl.Workbook()
+    ws_campanas = wb.active
+    ws_campanas.title = "ROI Resultados"
+    ws_campanas.append(_ENCABEZADOS)
+    ws_campanas.append(["Julio 2026", "Camp A", "id1", 100.0, "Curso X", "Curso", "Academy"])
+    # Espacio de más a propósito: debe seguir cruzando con "Curso X" en el
+    # resumen (ver _normalizar_nombre).
+    ws_campanas.append(["Septiembre 2026", "Camp B", "id2", 50.0, " Curso X ", "Curso", "Academy"])
+    ws_campanas.append(["Agosto 2026", "Camp C", "id3", 30.0, None, None, None])
+
+    ws_resumen = wb.create_sheet("Resumen por Evento")
+    ws_resumen.append(_ENCABEZADOS_RESUMEN)
+    ws_resumen.append(["Curso X", "Curso", "Academy", 150.0, 20, 5, 500.0, 7.5, 0.25, 2.3333333333333335])
+    ws_resumen.append(["Evento Pendiente", None, None, 0, None, None, None, "", "", ""])
+    wb.save(ruta)
+
+    eventos = leer_resumen_por_evento(ruta)
+    roi_curso_x = eventos[0]["roi"]
+    assert roi_curso_x == pytest.approx(2.3333333333333335)
+
+    assert eventos == [
+        {
+            "nombre_evento": "Curso X",
+            "tipo": "Curso",
+            "unidad": "Academy",
+            "inversion_total": 150,
+            "leads": 20,
+            "subscribers": 5,
+            "revenue": 500,
+            "costo_por_lead": 7.5,
+            "conversion": 0.25,
+            "roi": roi_curso_x,  # redondeo de ida y vuelta por XML, no importa acá
+            "mes": "Julio – Septiembre 2026",
+            "mes_orden": 2026 * 12 + 7,
+            "meses": ["Julio 2026", "Septiembre 2026"],
+        },
+        {
+            "nombre_evento": "Evento Pendiente",
+            "tipo": None,
+            "unidad": None,
+            "inversion_total": 0,
+            "leads": None,
+            "subscribers": None,
+            "revenue": None,
+            "costo_por_lead": None,  # "" de IFERROR == pendiente, no cero
+            "conversion": None,
+            "roi": None,
+            "mes": "",
+            "mes_orden": 0,
+            "meses": [],
+        },
+    ]
+
+
+def test_leer_resumen_por_evento_sin_archivo_devuelve_lista_vacia():
+    from marketing_analytics.reports.roi_resultados_builder import leer_resumen_por_evento
+
+    assert leer_resumen_por_evento(Path(tempfile.mkdtemp()) / "no_existe.xlsx") == []
