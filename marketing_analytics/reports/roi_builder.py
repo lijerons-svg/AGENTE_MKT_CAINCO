@@ -82,7 +82,13 @@ def generar_roi_campanas(conn: sqlite3.Connection, ruta_salida: str | Path) -> P
 
     if ruta_salida.exists():
         wb = load_workbook(ruta_salida)
-        ws = wb.active
+        # Por nombre, no por "hoja activa" (wb.active): esa es la pestaña
+        # que estaba seleccionada la última vez que Excel guardó el
+        # archivo, no necesariamente la hoja de datos. Bug real de QA en
+        # ROI_Resultados.xlsx (que sí tiene más de una hoja): confiar en
+        # wb.active hacía que una corrida leyera/escribiera la hoja
+        # equivocada apenas la usuaria guardaba con otra pestaña abierta.
+        ws = wb["ROI Campañas"] if "ROI Campañas" in wb.sheetnames else wb.worksheets[0]
     else:
         wb = Workbook()
         ws = wb.active
