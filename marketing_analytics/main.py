@@ -140,15 +140,19 @@ def main(config_path: str, env_path: str | None, desde_str: str | None, hasta_st
     sys.exit(1 if resumen.estado == "fallido" else 0)
 
 
-def publicar_github_pages(ruta_html: Path) -> None:
+def publicar_github_pages(ruta_html: Path, repo_root: Path | None = None) -> None:
     """Copia ControlContenido.html a docs/index.html y hace git push.
 
     Requiere que el repo esté clonado en la misma máquina donde corre el script
     y que git tenga credenciales configuradas (GitHub CLI, credential manager, etc.).
     Si algo falla, solo muestra un aviso — no interrumpe la corrida.
+
+    `repo_root` es opcional — por defecto, dos niveles arriba de
+    marketing_analytics/main.py (el repo real). Se puede pasar explícito
+    para testear contra un repo temporal.
     """
-    # Ruta del repo: dos niveles arriba de marketing_analytics/main.py
-    repo_root = Path(__file__).parent.parent.resolve()
+    if repo_root is None:
+        repo_root = Path(__file__).parent.parent.resolve()
     docs_dir = repo_root / "docs"
     destino = docs_dir / "index.html"
 
@@ -172,6 +176,29 @@ def publicar_github_pages(ruta_html: Path) -> None:
             ["git", "commit", "-m", f"dashboard: actualizar ControlContenido.html ({fecha})"],
             cwd=repo_root, check=True
         )
+
+        # Sincronizar con el remoto ANTES de pushear. Caso real de QA: si
+        # alguien más (o Claude arreglando un bug) pusheó al repo entre
+        # corridas, el push de acá abajo se rechazaba ("rejected: fetch
+        # first") y la corrida quedaba sin publicar hasta que alguien
+        # arreglara el conflicto a mano. Como docs/index.html solo lo
+        # toca esta función, el merge es siempre automático (nadie más
+        # edita ese archivo a mano).
+        subprocess.run(["git", "fetch", "origin"], cwd=repo_root, check=True)
+        rama_actual = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=repo_root, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        merge = subprocess.run(
+            ["git", "merge", "--no-edit", f"origin/{rama_actual}"],
+            cwd=repo_root, capture_output=True, text=True,
+        )
+        if merge.returncode != 0:
+            raise RuntimeError(
+                f"no se pudo sincronizar con el repositorio remoto antes de publicar "
+                f"(conflicto real, hay que resolverlo a mano): {merge.stdout}\n{merge.stderr}"
+            )
+
         subprocess.run(
             ["git", "push"],
             cwd=repo_root, check=True
