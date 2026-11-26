@@ -248,12 +248,6 @@ __CSS_CONTROL_CONTENIDO__
 
   <!-- ============ ROI ============ -->
   <section class="tab-panel" id="tab-roi" data-titulo-impresion="ROI">
-    <div class="aviso">
-      <strong>Alcance de la medición.</strong> El ROI, el costo por lead y el % de conversión solo se calculan
-      para eventos con <strong>Leads, Subscribers y Revenue cargados</strong> — un evento sin esos datos todavía
-      aparece en la tabla (para ver cuánto se invirtió), pero sin esas columnas, no con un cero.
-    </div>
-
     <div class="barra-filtros">
       <div class="grupo-filtro">
         <label>Unidad</label>
@@ -269,19 +263,29 @@ __CSS_CONTROL_CONTENIDO__
       </div>
     </div>
 
-    <div class="kpis kpis-hero" id="kpis-roi"></div>
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2>ROI por evento</h2>
+        <p>
+          El ROI, el costo por lead y el % de conversión solo se calculan para eventos con
+          Leads, Subscribers y Revenue cargados — un evento sin esos datos todavía aparece en la
+          tabla (para ver cuánto se invirtió), pero sin esas columnas, no con un cero.
+        </p>
+      </div>
+      <div class="kpis" id="kpis-roi"></div>
 
-    <section class="panel">
-      <h2>ROI por unidad</h2>
-      <p class="subtitulo">Solo eventos con Leads, Subscribers y Revenue cargados.</p>
-      <div id="chart-roi-unidad" class="grafico-alto"></div>
-    </section>
+      <section class="panel">
+        <h2>ROI por unidad</h2>
+        <p class="subtitulo">Solo eventos con Leads, Subscribers y Revenue cargados.</p>
+        <div id="chart-roi-unidad" class="grafico-alto"></div>
+      </section>
 
-    <section class="panel">
-      <h2>Resumen por evento</h2>
-      <p class="subtitulo">Ordenable por cualquier columna. "—" significa sin datos cargados todavía, no cero.</p>
-      <div id="tabla-roi-eventos"></div>
-    </section>
+      <section class="panel">
+        <h2>Resumen por evento</h2>
+        <p class="subtitulo">Ordenable por cualquier columna. "—" significa sin datos cargados todavía, no cero.</p>
+        <div id="tabla-roi-eventos"></div>
+      </section>
+    </div>
   </section>
 
 </main>
