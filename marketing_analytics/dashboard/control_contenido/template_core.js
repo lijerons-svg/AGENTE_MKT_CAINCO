@@ -39,7 +39,11 @@ const estado = {
   unidadesWeb: new Set(),
   aniosWeb: new Set(),
   mesesWeb: new Set(),
-  busquedaWeb: '',
+  // Página seleccionada haciendo clic en una fila de "Páginas más
+  // visitadas" (no un buscador de texto — el sitio tiene cientos de
+  // páginas distintas, ni un chip por cada una ni tipear a mano son
+  // prácticos para elegir una landing puntual).
+  paginaWeb: null,
 };
 
 /* Cualquier cambio en un filtro compartido repinta ambas pestañas que lo
@@ -621,6 +625,14 @@ function tablaInteractiva(contenedor, filas, columnasOriginal, opciones) {
         }
         tr.appendChild(td);
       });
+      // Clic en la fila para filtrar por ella (ej. "Páginas más visitadas"
+      // del tab Web): más práctico que un buscador de texto cuando hay
+      // cientos de valores posibles para mostrar como chips.
+      if (o.onFilaClick) {
+        tr.classList.add('fila-clickeable');
+        if (o.esFilaActiva && o.esFilaActiva(fila)) tr.classList.add('fila-activa');
+        tr.addEventListener('click', () => o.onFilaClick(fila));
+      }
       tbody.appendChild(tr);
     });
     tabla.appendChild(tbody);
@@ -825,13 +837,6 @@ function initBuscadoresCampana() {
     inputRoi.addEventListener('input', () => {
       estado.busquedaRoi = inputRoi.value.trim().toLowerCase();
       renderRoi();
-    });
-  }
-  const inputWeb = document.getElementById('buscar-pagina-web');
-  if (inputWeb) {
-    inputWeb.addEventListener('input', () => {
-      estado.busquedaWeb = inputWeb.value.trim().toLowerCase();
-      renderWeb();
     });
   }
 }

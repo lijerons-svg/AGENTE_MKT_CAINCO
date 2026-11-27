@@ -31,9 +31,7 @@ function webDiariasFiltradas() {
 
 function webPaginasFiltradas() {
   const porUnidad = webFiltrarUnidad(DATA.ga4.paginas || []);
-  const porPeriodo = filtrarPorAnioMes(porUnidad, 'fecha', estado.aniosWeb, estado.mesesWeb);
-  if (!estado.busquedaWeb) return porPeriodo;
-  return porPeriodo.filter((f) => String(f.pagina || '').toLowerCase().includes(estado.busquedaWeb));
+  return filtrarPorAnioMes(porUnidad, 'fecha', estado.aniosWeb, estado.mesesWeb);
 }
 
 function webCanalesFiltrados() {
@@ -54,6 +52,30 @@ function renderFiltrosWeb() {
   const meses = [...new Set(todasLasFilas.map((f) => mesDe(f.fecha)))].filter(Boolean).sort();
   dropdownMultiple('drop-anio-web', anios, estado.aniosWeb, () => renderWeb(), null, 'Todos');
   dropdownMultiple('drop-mes-web', meses, estado.mesesWeb, () => renderWeb(), (m) => MES_CORTO[Number(m) - 1] || m, 'Todos');
+  renderFiltroPaginaWeb();
+}
+
+/* No es un buscador de texto a propósito: el sitio tiene cientos de
+   páginas, así que se elige haciendo clic en una fila de "Páginas más
+   visitadas" (ver renderTablaWebPaginas) — acá solo se muestra la
+   selección actual, con una "x" para sacarla. */
+function renderFiltroPaginaWeb() {
+  const cont = document.getElementById('filtro-pagina-web');
+  if (!cont) return;
+  cont.textContent = '';
+  if (!estado.paginaWeb) {
+    cont.innerHTML = '<span class="vacio" style="padding:0">Clic en una fila de la tabla ↓</span>';
+    return;
+  }
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip-filtro activo';
+  chip.textContent = estado.paginaWeb + ' ✕';
+  chip.addEventListener('click', () => {
+    estado.paginaWeb = null;
+    renderWeb();
+  });
+  cont.appendChild(chip);
 }
 
 function renderKpisWeb(diarias, paginas, eventos) {
@@ -70,9 +92,19 @@ function renderKpisWeb(diarias, paginas, eventos) {
   });
 }
 
-function renderChartWebEvolucion(diarias) {
+function renderChartWebEvolucion(diarias, paginas) {
+  // Con una página seleccionada, el gráfico pasa a mostrar la evolución de
+  // ESA página puntual (ej. una landing), no el total del sitio.
+  const fuente = estado.paginaWeb ? paginas.filter((f) => f.pagina === estado.paginaWeb) : diarias;
+  const subtitulo = document.getElementById('subtitulo-evolucion-web');
+  if (subtitulo) {
+    subtitulo.textContent = estado.paginaWeb
+      ? `Por día, solo para "${estado.paginaWeb}".`
+      : 'Por día, dentro del período filtrado.';
+  }
+
   const porDia = {};
-  diarias.forEach((f) => {
+  fuente.forEach((f) => {
     porDia[f.fecha] = (porDia[f.fecha] || 0) + (Number(f.sesiones) || 0);
   });
   const fechas = Object.keys(porDia).sort();
@@ -151,7 +183,15 @@ function renderTablaWebPaginas(paginas) {
       { clave: 'sesiones', etiqueta: 'Sesiones', tipo: 'num' },
       { clave: 'vistas_pagina', etiqueta: 'Vistas', tipo: 'num' },
     ],
-    { ordenInicial: 'sesiones', dirInicial: 'desc' },
+    {
+      ordenInicial: 'sesiones',
+      dirInicial: 'desc',
+      onFilaClick: (fila) => {
+        estado.paginaWeb = estado.paginaWeb === fila.pagina ? null : fila.pagina; // clic de nuevo = deseleccionar
+        renderWeb();
+      },
+      esFilaActiva: (fila) => fila.pagina === estado.paginaWeb,
+    },
   );
 }
 
@@ -164,7 +204,7 @@ function renderWeb() {
   const eventos = webEventosFiltrados();
 
   renderKpisWeb(diarias, paginas, eventos);
-  renderChartWebEvolucion(diarias);
+  renderChartWebEvolucion(diarias, paginas);
   renderChartWebCanales(canales);
   renderTablaWebEventos(eventos);
   renderTablaWebPaginas(paginas);
