@@ -278,6 +278,8 @@ def upsert_ga4_metricas_paginas(
             "pagina": r.pagina,
             "sesiones": r.sesiones,
             "vistas_pagina": r.vistas_pagina,
+            "usuarios_totales": r.usuarios_totales,
+            "usuarios_nuevos": r.usuarios_nuevos,
         }
         tipo = _upsert_por_uid(conn, "ga4_metricas_paginas", r.uid, campos)
         _registrar(resultado, tipo)

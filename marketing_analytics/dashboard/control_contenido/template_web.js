@@ -16,6 +16,39 @@ const WEB_EVENTOS_CTA = [
   'form_submit', 'file_download', 'outbound_link_click',
 ];
 
+/* Nombres de canal tal como los agrupa GA4 ("Default channel group") —
+   siempre en inglés, no configurable desde acá. Se traducen solo para
+   mostrar; cualquier canal nuevo que GA4 agregue y no esté en este mapa
+   se muestra tal cual (en inglés) en vez de romper. */
+const WEB_CANAL_ES = {
+  'Direct': 'Directo',
+  'Organic Search': 'Búsqueda orgánica',
+  'Organic Social': 'Redes sociales orgánicas',
+  'Paid Social': 'Redes sociales pagas',
+  'Paid Search': 'Búsqueda paga',
+  'Organic Video': 'Video orgánico',
+  'Paid Video': 'Video pago',
+  'Display': 'Display',
+  'Affiliates': 'Afiliados',
+  'Email': 'Email',
+  'Referral': 'Referidos',
+  'Audio': 'Audio',
+  'SMS': 'SMS',
+  'Mobile Push Notifications': 'Notificaciones push',
+  'Organic Shopping': 'Shopping orgánico',
+  'Paid Shopping': 'Shopping pago',
+  'Cross-network': 'Red cruzada',
+  'Paid Other': 'Pago (otro)',
+  'Unassigned': 'Sin asignar',
+  'AI Assistant': 'Asistente de IA',
+  'AI Overview': 'Resumen de IA',
+  'AI Search': 'Búsqueda con IA',
+};
+
+function webCanalEs(canal) {
+  return WEB_CANAL_ES[canal] || canal;
+}
+
 function webValoresUnidad() {
   return [...new Set((DATA.ga4.diarias || []).map((f) => f.unidad).filter(Boolean))].sort();
 }
@@ -83,12 +116,20 @@ function renderKpisWeb(diarias, paginas, eventos) {
   if (!cont) return;
   cont.textContent = '';
 
-  kpi(cont, 'Sesiones', fmtNum.format(sum(diarias, 'sesiones')));
-  kpi(cont, 'Usuarios', fmtNum.format(sum(diarias, 'usuarios_totales')));
-  kpi(cont, 'Usuarios nuevos', fmtNum.format(sum(diarias, 'usuarios_nuevos')));
-  kpi(cont, 'Vistas de página', fmtNum.format(sum(paginas, 'vistas_pagina')));
+  // Con una página seleccionada, Sesiones/Usuarios/Usuarios nuevos/Vistas
+  // de página pasan a ser SOLO de esa página (el dato por página de GA4
+  // ya trae estas 4 métricas). "Interacciones (CTA)" sigue siendo del
+  // sitio completo siempre: GA4 no nos da el evento desglosado por
+  // página puntual (ver nota fija del panel).
+  const paginaSeleccionada = estado.paginaWeb ? paginas.filter((f) => f.pagina === estado.paginaWeb) : null;
+  const fuente = paginaSeleccionada || diarias;
+
+  kpi(cont, 'Sesiones', fmtNum.format(sum(fuente, 'sesiones')));
+  kpi(cont, 'Usuarios', fmtNum.format(sum(fuente, 'usuarios_totales')));
+  kpi(cont, 'Usuarios nuevos', fmtNum.format(sum(fuente, 'usuarios_nuevos')));
+  kpi(cont, 'Vistas de página', fmtNum.format(sum(paginaSeleccionada || paginas, 'vistas_pagina')));
   kpi(cont, 'Interacciones (CTA)', fmtNum.format(sum(eventos, 'conteo')), {
-    info: 'Suma de clics en botones de contacto/consultas/ecommerce, formularios enviados, descargas y clics a links externos — no incluye vistas de página ni otros eventos automáticos de medición.',
+    info: 'Suma de clics en botones de contacto/consultas/ecommerce, formularios enviados, descargas y clics a links externos — no incluye vistas de página ni otros eventos automáticos de medición. Es siempre del sitio completo, incluso con una página seleccionada.',
   });
 }
 
@@ -137,7 +178,9 @@ function renderChartWebCanales(canales) {
       type: 'bar',
       orientation: 'h',
       x: filas.map((f) => f[1]),
-      y: filas.map((f) => f[0]),
+      y: filas.map((f) => webCanalEs(f[0])),
+      text: filas.map((f) => fmtNum.format(f[1])),
+      textposition: 'auto',
       marker: { color: getComputedStyleVar('--accent') },
     }],
     { xaxis: { title: 'Sesiones' } },

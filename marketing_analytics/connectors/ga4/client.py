@@ -79,17 +79,20 @@ class GA4Client:
     def obtener_metricas_por_pagina(
         self, property_id: str, desde: datetime.date, hasta: datetime.date
     ) -> list[dict]:
-        """Devuelve una fila por día+página (sesiones, vistas de página),
-        para el rango [desde, hasta] (inclusive) — permite aislar el
-        tráfico de una landing puntual (ej. "/curso-emprendimiento") dentro
-        del sitio principal, sin necesitar una propiedad de Analytics
-        separada por landing."""
+        """Devuelve una fila por día+página (sesiones, vistas de página,
+        usuarios totales/nuevos), para el rango [desde, hasta] (inclusive)
+        — permite aislar el tráfico de una landing puntual (ej.
+        "/curso-emprendimiento") dentro del sitio principal, con las
+        mismas métricas de KPI que el total del sitio, sin necesitar una
+        propiedad de Analytics separada por landing."""
         body = {
             "dateRanges": [{"startDate": desde.isoformat(), "endDate": hasta.isoformat()}],
             "dimensions": [{"name": "date"}, {"name": "pagePath"}],
             "metrics": [
                 {"name": "sessions"},
                 {"name": "screenPageViews"},
+                {"name": "totalUsers"},
+                {"name": "newUsers"},
             ],
         }
         data = solicitar(
@@ -112,6 +115,8 @@ class GA4Client:
                     "pagina": pagina,
                     "sesiones": int(valores[0]["value"]),
                     "vistas_pagina": int(valores[1]["value"]),
+                    "usuarios_totales": int(valores[2]["value"]),
+                    "usuarios_nuevos": int(valores[3]["value"]),
                 }
             )
         return filas

@@ -259,6 +259,8 @@ class GA4MetricaPagina(BaseModel):
     pagina: str
     sesiones: int = 0
     vistas_pagina: int = 0
+    usuarios_totales: int = 0
+    usuarios_nuevos: int = 0
 
     @property
     def uid(self) -> str:

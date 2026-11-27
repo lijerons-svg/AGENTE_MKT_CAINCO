@@ -166,6 +166,8 @@ CREATE TABLE IF NOT EXISTS ga4_metricas_paginas (
     pagina TEXT NOT NULL,
     sesiones INTEGER NOT NULL DEFAULT 0,
     vistas_pagina INTEGER NOT NULL DEFAULT 0,
+    usuarios_totales INTEGER NOT NULL DEFAULT 0,
+    usuarios_nuevos INTEGER NOT NULL DEFAULT 0,
     creado_en TEXT NOT NULL DEFAULT (datetime('now')),
     actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
 );

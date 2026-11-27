@@ -84,11 +84,11 @@ def test_obtener_metricas_por_pagina_mapea_filas_de_ga4():
             "rows": [
                 {
                     "dimensionValues": [{"value": "20260715"}, {"value": "/curso-emprendimiento"}],
-                    "metricValues": [{"value": "5"}, {"value": "8"}],
+                    "metricValues": [{"value": "5"}, {"value": "8"}, {"value": "4"}, {"value": "2"}],
                 },
                 {
                     "dimensionValues": [{"value": "20260715"}, {"value": "/"}],
-                    "metricValues": [{"value": "100"}, {"value": "120"}],
+                    "metricValues": [{"value": "100"}, {"value": "120"}, {"value": "90"}, {"value": "30"}],
                 },
             ]
         },
@@ -105,12 +105,16 @@ def test_obtener_metricas_por_pagina_mapea_filas_de_ga4():
             "pagina": "/curso-emprendimiento",
             "sesiones": 5,
             "vistas_pagina": 8,
+            "usuarios_totales": 4,
+            "usuarios_nuevos": 2,
         },
         {
             "fecha": datetime.date(2026, 7, 15),
             "pagina": "/",
             "sesiones": 100,
             "vistas_pagina": 120,
+            "usuarios_totales": 90,
+            "usuarios_nuevos": 30,
         },
     ]
 

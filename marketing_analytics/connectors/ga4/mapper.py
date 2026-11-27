@@ -28,6 +28,8 @@ def mapear_fila_pagina(propiedad: PropiedadGA4, fila: dict) -> GA4MetricaPagina:
         pagina=fila["pagina"],
         sesiones=fila["sesiones"],
         vistas_pagina=fila["vistas_pagina"],
+        usuarios_totales=fila["usuarios_totales"],
+        usuarios_nuevos=fila["usuarios_nuevos"],
     )
 
 

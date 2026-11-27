@@ -36,6 +36,8 @@ def test_mapear_fila_pagina():
         "pagina": "/curso-emprendimiento",
         "sesiones": 5,
         "vistas_pagina": 8,
+        "usuarios_totales": 4,
+        "usuarios_nuevos": 2,
     }
 
     registro = mapear_fila_pagina(propiedad, fila)
@@ -46,6 +48,8 @@ def test_mapear_fila_pagina():
     assert registro.pagina == "/curso-emprendimiento"
     assert registro.sesiones == 5
     assert registro.vistas_pagina == 8
+    assert registro.usuarios_totales == 4
+    assert registro.usuarios_nuevos == 2
     assert registro.uid == "ga4_pagina|476689307|2026-07-15|/curso-emprendimiento"
 
 

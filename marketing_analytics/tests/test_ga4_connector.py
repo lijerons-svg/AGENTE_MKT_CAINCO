@@ -51,7 +51,7 @@ def test_fetch_tambien_trae_el_desglose_por_pagina():
     config = GA4Config(propiedades=[PropiedadGA4(unidad="CAINCO Sitio Principal", property_id="111")])
     cliente_falso = _cliente_falso(
         filas_paginas=[
-            {"fecha": datetime.date(2026, 7, 1), "pagina": "/curso-emprendimiento", "sesiones": 5, "vistas_pagina": 8}
+            {"fecha": datetime.date(2026, 7, 1), "pagina": "/curso-emprendimiento", "sesiones": 5, "vistas_pagina": 8, "usuarios_totales": 4, "usuarios_nuevos": 2}
         ]
     )
 
@@ -135,7 +135,7 @@ def test_upsert_delega_al_repositorio(conn):
     config = GA4Config(propiedades=[PropiedadGA4(unidad="Academy Cainco", property_id="111")])
     cliente_falso = _cliente_falso(
         filas_paginas=[
-            {"fecha": datetime.date(2026, 7, 1), "pagina": "/curso-x", "sesiones": 3, "vistas_pagina": 4}
+            {"fecha": datetime.date(2026, 7, 1), "pagina": "/curso-x", "sesiones": 3, "vistas_pagina": 4, "usuarios_totales": 2, "usuarios_nuevos": 1}
         ],
         filas_canales=[{"fecha": datetime.date(2026, 7, 1), "canal": "Direct", "sesiones": 6}],
         filas_eventos=[{"fecha": datetime.date(2026, 7, 1), "evento": "btn_consultas", "conteo": 2}],

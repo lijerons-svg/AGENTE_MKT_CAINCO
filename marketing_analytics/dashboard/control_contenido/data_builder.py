@@ -157,7 +157,8 @@ def _construir_datos_ga4(conn: sqlite3.Connection) -> dict:
         "paginas": _filas_a_dicts(
             conn,
             """
-            SELECT unidad, property_id, fecha, pagina, sesiones, vistas_pagina
+            SELECT unidad, property_id, fecha, pagina, sesiones, vistas_pagina,
+                   usuarios_totales, usuarios_nuevos
             FROM ga4_metricas_paginas ORDER BY fecha
             """,
         ),
