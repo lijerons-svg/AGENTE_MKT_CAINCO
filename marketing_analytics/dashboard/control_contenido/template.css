@@ -527,12 +527,12 @@ table.tabla th.ordenable.desc::after { content: '↓'; opacity: 1; }
 table.tabla td.num { font-variant-numeric: tabular-nums; text-align: right; }
 table.tabla tbody tr:hover { background: var(--surface-2); }
 table.tabla td.texto-largo {
-  max-width: 320px; overflow: hidden; text-overflow: ellipsis; cursor: help;
+  max-width: 320px; white-space: normal; word-break: break-word; line-height: 1.4;
 }
 /* Tabla de "Detalle de campañas" (Análisis): tiene muchas columnas, así que
    va más apretada para entrar en pantalla sin barra de desplazamiento. */
 table.tabla.tabla-compacta th, table.tabla.tabla-compacta td { padding: 6px 4px; font-size: 0.74rem; }
-table.tabla.tabla-compacta td.texto-largo { max-width: 150px; }
+table.tabla.tabla-compacta td.texto-largo { max-width: 200px; white-space: normal; word-break: break-word; line-height: 1.4; }
 table.tabla.tabla-compacta .pill { padding: 1px 6px; font-size: 0.7rem; }
 /* Con 14 columnas, cada botón de encabezado (info + mover) suma rápido —
    un poco más chicos y pegados al texto para no volver a necesitar scroll. */
