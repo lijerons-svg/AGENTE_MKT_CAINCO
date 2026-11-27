@@ -170,6 +170,30 @@ CREATE TABLE IF NOT EXISTS ga4_metricas_paginas (
     actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS ga4_metricas_canales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid TEXT NOT NULL UNIQUE,
+    unidad TEXT NOT NULL,
+    property_id TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    canal TEXT NOT NULL,
+    sesiones INTEGER NOT NULL DEFAULT 0,
+    creado_en TEXT NOT NULL DEFAULT (datetime('now')),
+    actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ga4_metricas_eventos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid TEXT NOT NULL UNIQUE,
+    unidad TEXT NOT NULL,
+    property_id TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    evento TEXT NOT NULL,
+    conteo INTEGER NOT NULL DEFAULT 0,
+    creado_en TEXT NOT NULL DEFAULT (datetime('now')),
+    actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS configuracion (
     clave TEXT PRIMARY KEY,
     valor TEXT NOT NULL,

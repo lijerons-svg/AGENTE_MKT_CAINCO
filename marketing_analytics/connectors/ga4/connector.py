@@ -18,13 +18,25 @@ from dataclasses import dataclass, field
 from marketing_analytics.config.schema import GA4Config
 from marketing_analytics.connectors.base import BaseConnector
 from marketing_analytics.connectors.ga4.client import GA4Client
-from marketing_analytics.connectors.ga4.mapper import mapear_fila, mapear_fila_pagina
+from marketing_analytics.connectors.ga4.mapper import (
+    mapear_fila,
+    mapear_fila_canal,
+    mapear_fila_evento,
+    mapear_fila_pagina,
+)
 from marketing_analytics.database.repository import (
     ResultadoUpsert,
+    upsert_ga4_metricas_canales,
     upsert_ga4_metricas_diarias,
+    upsert_ga4_metricas_eventos,
     upsert_ga4_metricas_paginas,
 )
-from marketing_analytics.models.records import GA4MetricaDiaria, GA4MetricaPagina
+from marketing_analytics.models.records import (
+    GA4MetricaCanal,
+    GA4MetricaDiaria,
+    GA4MetricaEvento,
+    GA4MetricaPagina,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +45,8 @@ logger = logging.getLogger(__name__)
 class GA4FetchResult:
     metricas_diarias: list[GA4MetricaDiaria] = field(default_factory=list)
     metricas_paginas: list[GA4MetricaPagina] = field(default_factory=list)
+    metricas_canales: list[GA4MetricaCanal] = field(default_factory=list)
+    metricas_eventos: list[GA4MetricaEvento] = field(default_factory=list)
 
 
 class GA4Connector(BaseConnector):
@@ -66,6 +80,20 @@ class GA4Connector(BaseConnector):
                 resultado.metricas_paginas.extend(
                     mapear_fila_pagina(propiedad, fila) for fila in filas_paginas
                 )
+
+                filas_canales = self._client.obtener_metricas_por_canal(
+                    propiedad.property_id, desde, hasta
+                )
+                resultado.metricas_canales.extend(
+                    mapear_fila_canal(propiedad, fila) for fila in filas_canales
+                )
+
+                filas_eventos = self._client.obtener_metricas_por_evento(
+                    propiedad.property_id, desde, hasta
+                )
+                resultado.metricas_eventos.extend(
+                    mapear_fila_evento(propiedad, fila) for fila in filas_eventos
+                )
             except Exception as error:
                 logger.warning(
                     "Propiedad GA4 '%s' (%s) falló, se sigue con el resto: %s",
@@ -87,4 +115,6 @@ class GA4Connector(BaseConnector):
     def upsert(self, conn: sqlite3.Connection, datos: GA4FetchResult) -> ResultadoUpsert:
         resultado = upsert_ga4_metricas_diarias(conn, datos.metricas_diarias)
         resultado += upsert_ga4_metricas_paginas(conn, datos.metricas_paginas)
+        resultado += upsert_ga4_metricas_canales(conn, datos.metricas_canales)
+        resultado += upsert_ga4_metricas_eventos(conn, datos.metricas_eventos)
         return resultado

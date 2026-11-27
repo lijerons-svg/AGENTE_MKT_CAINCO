@@ -265,6 +265,40 @@ class GA4MetricaPagina(BaseModel):
         return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.pagina}"
 
 
+class GA4MetricaCanal(BaseModel):
+    """Un día de tráfico de UN canal de adquisición puntual (Organic
+    Social, Organic Search, Direct, Paid Social, Referral, etc. —
+    agrupación estándar de GA4) dentro de una propiedad."""
+
+    fuente: str = Field(default="ga4_canal", frozen=True)
+    unidad: str
+    property_id: str
+    fecha: datetime.date
+    canal: str
+    sesiones: int = 0
+
+    @property
+    def uid(self) -> str:
+        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.canal}"
+
+
+class GA4MetricaEvento(BaseModel):
+    """Un día de conteo de UN evento puntual (clics, envíos de formulario,
+    descargas, o cualquier "llamado a la acción" instrumentado a mano en
+    el sitio, ej. "contact_link_click") dentro de una propiedad."""
+
+    fuente: str = Field(default="ga4_evento", frozen=True)
+    unidad: str
+    property_id: str
+    fecha: datetime.date
+    evento: str
+    conteo: int = 0
+
+    @property
+    def uid(self) -> str:
+        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.evento}"
+
+
 class EjecucionLog(BaseModel):
     hora_inicio: datetime.datetime
     hora_fin: datetime.datetime | None = None

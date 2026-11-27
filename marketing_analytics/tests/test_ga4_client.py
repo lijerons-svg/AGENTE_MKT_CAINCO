@@ -132,3 +132,65 @@ def test_usa_el_token_que_devuelve_obtener_token_fn():
 
     assert llamadas == ["ruta/credenciales.json"]
     assert responses.calls[0].request.headers["Authorization"] == "Bearer un-token-cualquiera"
+
+
+@responses.activate
+def test_obtener_metricas_por_canal_mapea_filas_de_ga4():
+    cliente = GA4Client("ruta/falsa.json", obtener_token_fn=_token_falso)
+    responses.add(
+        responses.POST,
+        f"{BASE}/properties/123456789:runReport",
+        json={
+            "rows": [
+                {
+                    "dimensionValues": [{"value": "20260715"}, {"value": "Organic Social"}],
+                    "metricValues": [{"value": "61"}],
+                },
+                {
+                    "dimensionValues": [{"value": "20260715"}, {"value": "Direct"}],
+                    "metricValues": [{"value": "20"}],
+                },
+            ]
+        },
+        status=200,
+    )
+
+    filas = cliente.obtener_metricas_por_canal(
+        "123456789", datetime.date(2026, 7, 15), datetime.date(2026, 7, 15)
+    )
+
+    assert filas == [
+        {"fecha": datetime.date(2026, 7, 15), "canal": "Organic Social", "sesiones": 61},
+        {"fecha": datetime.date(2026, 7, 15), "canal": "Direct", "sesiones": 20},
+    ]
+
+
+@responses.activate
+def test_obtener_metricas_por_evento_mapea_filas_de_ga4():
+    cliente = GA4Client("ruta/falsa.json", obtener_token_fn=_token_falso)
+    responses.add(
+        responses.POST,
+        f"{BASE}/properties/123456789:runReport",
+        json={
+            "rows": [
+                {
+                    "dimensionValues": [{"value": "20260715"}, {"value": "contact_link_click"}],
+                    "metricValues": [{"value": "7"}],
+                },
+                {
+                    "dimensionValues": [{"value": "20260715"}, {"value": "page_view"}],
+                    "metricValues": [{"value": "320"}],
+                },
+            ]
+        },
+        status=200,
+    )
+
+    filas = cliente.obtener_metricas_por_evento(
+        "123456789", datetime.date(2026, 7, 15), datetime.date(2026, 7, 15)
+    )
+
+    assert filas == [
+        {"fecha": datetime.date(2026, 7, 15), "evento": "contact_link_click", "conteo": 7},
+        {"fecha": datetime.date(2026, 7, 15), "evento": "page_view", "conteo": 320},
+    ]

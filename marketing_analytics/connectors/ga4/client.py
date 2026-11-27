@@ -2,11 +2,14 @@
 (sin el SDK oficial de Google, pesado) — mismo patrón liviano que los demás
 conectores.
 
-Trae el total diario (sesiones, usuarios totales, usuarios nuevos) por
-propiedad, y el desglose por página (las landings que arma CAINCO viven
-como páginas del sitio principal, no como propiedades separadas — ver
-GA4MetricaPagina). Desglose por canal de adquisición/evento de conversión
-queda para una siguiente vuelta, reusando este mismo cliente.
+Trae, por propiedad: el total diario (sesiones, usuarios totales, usuarios
+nuevos), el desglose por página (las landings que arma CAINCO viven como
+páginas del sitio principal, no como propiedades separadas — ver
+GA4MetricaPagina), el desglose por canal de adquisición (de dónde viene
+el tráfico: redes, búsqueda orgánica, directo, pago, referidos) y el
+desglose por evento (clics, envíos de formulario, descargas, y cualquier
+evento de "llamado a la acción" que ya esté instrumentado en el sitio —
+ver GA4MetricaEvento).
 """
 from __future__ import annotations
 
@@ -109,6 +112,79 @@ class GA4Client:
                     "pagina": pagina,
                     "sesiones": int(valores[0]["value"]),
                     "vistas_pagina": int(valores[1]["value"]),
+                }
+            )
+        return filas
+
+    def obtener_metricas_por_canal(
+        self, property_id: str, desde: datetime.date, hasta: datetime.date
+    ) -> list[dict]:
+        """Devuelve una fila por día+canal (sesiones) — de dónde viene el
+        tráfico: Organic Social, Organic Search, Direct, Paid Social,
+        Referral, etc. (agrupación estándar de GA4, "Default channel
+        group")."""
+        body = {
+            "dateRanges": [{"startDate": desde.isoformat(), "endDate": hasta.isoformat()}],
+            "dimensions": [{"name": "date"}, {"name": "sessionDefaultChannelGroup"}],
+            "metrics": [{"name": "sessions"}],
+        }
+        data = solicitar(
+            "POST",
+            f"{_BASE_URL}/properties/{property_id}:runReport",
+            headers=self._headers(),
+            json=body,
+        )
+
+        filas = []
+        for fila in data.get("rows", []):
+            fecha_ga4 = fila["dimensionValues"][0]["value"]
+            canal = fila["dimensionValues"][1]["value"]  # "Organic Social", "Direct", etc.
+            valores = fila["metricValues"]
+            filas.append(
+                {
+                    "fecha": datetime.date(
+                        int(fecha_ga4[0:4]), int(fecha_ga4[4:6]), int(fecha_ga4[6:8])
+                    ),
+                    "canal": canal,
+                    "sesiones": int(valores[0]["value"]),
+                }
+            )
+        return filas
+
+    def obtener_metricas_por_evento(
+        self, property_id: str, desde: datetime.date, hasta: datetime.date
+    ) -> list[dict]:
+        """Devuelve una fila por día+evento (cantidad) — todos los eventos
+        que GA4 ya esté registrando (clics, envíos de formulario,
+        descargas, y cualquier evento de "llamado a la acción" que un
+        desarrollador haya instrumentado a mano, ej. "contact_link_click").
+        No filtra a "conversiones" marcadas como tales en GA4 (eso requiere
+        la Admin API, no la Data API que usa este cliente) — trae todos, el
+        dashboard decide cuáles mostrar como relevantes."""
+        body = {
+            "dateRanges": [{"startDate": desde.isoformat(), "endDate": hasta.isoformat()}],
+            "dimensions": [{"name": "date"}, {"name": "eventName"}],
+            "metrics": [{"name": "eventCount"}],
+        }
+        data = solicitar(
+            "POST",
+            f"{_BASE_URL}/properties/{property_id}:runReport",
+            headers=self._headers(),
+            json=body,
+        )
+
+        filas = []
+        for fila in data.get("rows", []):
+            fecha_ga4 = fila["dimensionValues"][0]["value"]
+            evento = fila["dimensionValues"][1]["value"]  # "contact_link_click", "click", etc.
+            valores = fila["metricValues"]
+            filas.append(
+                {
+                    "fecha": datetime.date(
+                        int(fecha_ga4[0:4]), int(fecha_ga4[4:6]), int(fecha_ga4[6:8])
+                    ),
+                    "evento": evento,
+                    "conteo": int(valores[0]["value"]),
                 }
             )
         return filas

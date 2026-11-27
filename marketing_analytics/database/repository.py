@@ -12,7 +12,9 @@ from dataclasses import dataclass
 from marketing_analytics.models.records import (
     CalendarioPublicacion,
     ControlPerfilMensual,
+    GA4MetricaCanal,
     GA4MetricaDiaria,
+    GA4MetricaEvento,
     GA4MetricaPagina,
     LinkedInOrganicoPost,
     MailchimpCampana,
@@ -278,6 +280,42 @@ def upsert_ga4_metricas_paginas(
             "vistas_pagina": r.vistas_pagina,
         }
         tipo = _upsert_por_uid(conn, "ga4_metricas_paginas", r.uid, campos)
+        _registrar(resultado, tipo)
+    conn.commit()
+    return resultado
+
+
+def upsert_ga4_metricas_canales(
+    conn: sqlite3.Connection, registros: list[GA4MetricaCanal]
+) -> ResultadoUpsert:
+    resultado = ResultadoUpsert()
+    for r in registros:
+        campos = {
+            "unidad": r.unidad,
+            "property_id": r.property_id,
+            "fecha": r.fecha.isoformat(),
+            "canal": r.canal,
+            "sesiones": r.sesiones,
+        }
+        tipo = _upsert_por_uid(conn, "ga4_metricas_canales", r.uid, campos)
+        _registrar(resultado, tipo)
+    conn.commit()
+    return resultado
+
+
+def upsert_ga4_metricas_eventos(
+    conn: sqlite3.Connection, registros: list[GA4MetricaEvento]
+) -> ResultadoUpsert:
+    resultado = ResultadoUpsert()
+    for r in registros:
+        campos = {
+            "unidad": r.unidad,
+            "property_id": r.property_id,
+            "fecha": r.fecha.isoformat(),
+            "evento": r.evento,
+            "conteo": r.conteo,
+        }
+        tipo = _upsert_por_uid(conn, "ga4_metricas_eventos", r.uid, campos)
         _registrar(resultado, tipo)
     conn.commit()
     return resultado
