@@ -839,6 +839,15 @@ function initBuscadoresCampana() {
       renderRoi();
     });
   }
+  // Página del tab Web: autocompletar, no re-renderiza todo el tab en cada
+  // letra (serían cientos de páginas) — solo arma la lista de sugerencias;
+  // elegir una sí llama a renderWeb() (ver renderSugerenciasPaginaWeb).
+  const inputWeb = document.getElementById('buscar-pagina-web');
+  if (inputWeb) {
+    inputWeb.addEventListener('input', () => {
+      renderSugerenciasPaginaWeb(inputWeb.value.trim().toLowerCase());
+    });
+  }
 }
 
 function renderAll() {

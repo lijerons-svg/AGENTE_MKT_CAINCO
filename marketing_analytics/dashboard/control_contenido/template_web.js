@@ -93,8 +93,8 @@ function renderFiltrosWeb() {
   renderFiltroPaginaWeb();
 }
 
-/* No es un buscador de texto a propósito: el sitio tiene cientos de
-   páginas, así que se elige haciendo clic en una fila de "Páginas más
+/* Se elige con el buscador de arriba (autocompletar, ver
+   renderSugerenciasPaginaWeb) o haciendo clic en una fila de "Páginas más
    visitadas" (ver renderTablaWebPaginas) — acá solo se muestra la
    selección actual, con una "x" para sacarla. */
 function renderFiltroPaginaWeb() {
@@ -102,7 +102,7 @@ function renderFiltroPaginaWeb() {
   if (!cont) return;
   cont.textContent = '';
   if (!estado.paginaWeb) {
-    cont.innerHTML = '<span class="vacio" style="padding:0">Clic en una fila de la tabla ↓</span>';
+    cont.innerHTML = '<span class="vacio" style="padding:0">Ninguna página seleccionada</span>';
     return;
   }
   const chip = document.createElement('button');
@@ -114,6 +114,43 @@ function renderFiltroPaginaWeb() {
     renderWeb();
   });
   cont.appendChild(chip);
+}
+
+/* Autocompletar: no hay forma práctica de mostrar cientos de páginas como
+   chips, así que se escribe y se eligen las coincidencias más cercanas de
+   una lista acotada — mismo mecanismo visual que dropdownMultiple
+   (.dropdown-panel/.dropdown-opcion), pero manejado a mano acá porque no
+   es una selección múltiple sino autocompletar + elegir una sola. */
+function renderSugerenciasPaginaWeb(filtro) {
+  const panel = document.getElementById('sugerencias-pagina-web');
+  if (!panel) return;
+  panel.textContent = '';
+
+  if (!filtro) {
+    panel.classList.remove('visible');
+    return;
+  }
+
+  const todasLasPaginas = [...new Set((DATA.ga4.paginas || []).map((f) => f.pagina))];
+  const coincidencias = todasLasPaginas.filter((p) => p.toLowerCase().includes(filtro)).sort().slice(0, 8);
+
+  if (!coincidencias.length) {
+    panel.innerHTML = '<div class="dropdown-opcion" style="cursor:default">Sin resultados</div>';
+  } else {
+    coincidencias.forEach((pagina) => {
+      const opcion = document.createElement('div');
+      opcion.className = 'dropdown-opcion';
+      opcion.textContent = pagina;
+      opcion.addEventListener('click', () => {
+        estado.paginaWeb = pagina;
+        document.getElementById('buscar-pagina-web').value = '';
+        panel.classList.remove('visible');
+        renderWeb();
+      });
+      panel.appendChild(opcion);
+    });
+  }
+  panel.classList.add('visible');
 }
 
 function renderKpisWeb(diarias, paginas, eventos) {
