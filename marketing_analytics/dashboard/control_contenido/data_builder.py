@@ -133,7 +133,49 @@ def construir_datos_control_contenido(
 
     roi_eventos = leer_resumen_por_evento(ruta_roi_resultados) if ruta_roi_resultados else []
 
-    return {"unidades": unidades, "mailchimp": mailchimp, "roi_eventos": roi_eventos}
+    return {
+        "unidades": unidades,
+        "mailchimp": mailchimp,
+        "roi_eventos": roi_eventos,
+        "ga4": _construir_datos_ga4(conn),
+    }
+
+
+def _construir_datos_ga4(conn: sqlite3.Connection) -> dict:
+    """GA4 queda global (no anidado en `unidades`, como Meta): sus
+    "unidad" son sitios web (CAINCO Sitio Principal, CCAC, etc.), un set
+    completamente distinto al de los perfiles de Facebook/Instagram —
+    mezclarlos en el mismo balde confundiría los filtros de ambos tabs."""
+    return {
+        "diarias": _filas_a_dicts(
+            conn,
+            """
+            SELECT unidad, property_id, fecha, sesiones, usuarios_totales, usuarios_nuevos
+            FROM ga4_metricas_diarias ORDER BY fecha
+            """,
+        ),
+        "paginas": _filas_a_dicts(
+            conn,
+            """
+            SELECT unidad, property_id, fecha, pagina, sesiones, vistas_pagina
+            FROM ga4_metricas_paginas ORDER BY fecha
+            """,
+        ),
+        "canales": _filas_a_dicts(
+            conn,
+            """
+            SELECT unidad, property_id, fecha, canal, sesiones
+            FROM ga4_metricas_canales ORDER BY fecha
+            """,
+        ),
+        "eventos": _filas_a_dicts(
+            conn,
+            """
+            SELECT unidad, property_id, fecha, evento, conteo
+            FROM ga4_metricas_eventos ORDER BY fecha
+            """,
+        ),
+    }
 
 
 def _agregar_control_perfiles(

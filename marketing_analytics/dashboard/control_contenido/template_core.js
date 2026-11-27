@@ -31,6 +31,15 @@ const estado = {
   unidadesRoi: new Set(),
   mesesRoi: new Set(),
   busquedaRoi: '',
+  // Web (GA4): "unidad" acá son sitios/propiedades (CAINCO Sitio
+  // Principal, CCAC...), un set totalmente distinto al de Meta — por eso
+  // no comparte unidades/anios/meses con Análisis/Mailchimp. Sí son datos
+  // día a día reales (a diferencia de ROI), así que reusa
+  // filtrarPorAnioMes con año/mes separados, igual que Análisis.
+  unidadesWeb: new Set(),
+  aniosWeb: new Set(),
+  mesesWeb: new Set(),
+  busquedaWeb: '',
 };
 
 /* Cualquier cambio en un filtro compartido repinta ambas pestañas que lo
@@ -818,6 +827,13 @@ function initBuscadoresCampana() {
       renderRoi();
     });
   }
+  const inputWeb = document.getElementById('buscar-pagina-web');
+  if (inputWeb) {
+    inputWeb.addEventListener('input', () => {
+      estado.busquedaWeb = inputWeb.value.trim().toLowerCase();
+      renderWeb();
+    });
+  }
 }
 
 function renderAll() {
@@ -826,4 +842,5 @@ function renderAll() {
   renderAnalisis();
   renderMailchimp();
   renderRoi();
+  renderWeb();
 }

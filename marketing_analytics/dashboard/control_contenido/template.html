@@ -27,6 +27,7 @@ __CSS_CONTROL_CONTENIDO__
     <button class="tab-btn" data-tab="analisis" type="button">Análisis</button>
     <button class="tab-btn" data-tab="mailchimp" type="button">Mailchimp</button>
     <button class="tab-btn" data-tab="roi" type="button">ROI</button>
+    <button class="tab-btn" data-tab="web" type="button">Web</button>
   </div>
 </div>
 
@@ -284,6 +285,63 @@ __CSS_CONTROL_CONTENIDO__
         <h2>Resumen por evento</h2>
         <p class="subtitulo">Ordenable por cualquier columna. "—" significa sin datos cargados todavía, no cero.</p>
         <div id="tabla-roi-eventos"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ============ WEB (Google Analytics 4) ============ -->
+  <section class="tab-panel" id="tab-web" data-titulo-impresion="Web">
+    <div class="barra-filtros">
+      <div class="grupo-filtro">
+        <label>Sitio</label>
+        <div class="chips-filtro" id="chips-unidad-web"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Año</label>
+        <div id="drop-anio-web"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Mes</label>
+        <div id="drop-mes-web"></div>
+      </div>
+      <div class="grupo-filtro">
+        <label>Página</label>
+        <input type="search" class="buscador" id="buscar-pagina-web" placeholder="Buscar landing o página..." />
+      </div>
+    </div>
+
+    <div class="seccion">
+      <div class="seccion-cabecera">
+        <h2>Tráfico del sitio</h2>
+        <p>Datos de Google Analytics 4. "Interacciones" suma los clics de botones, formularios enviados y
+          descargas que el sitio ya tiene instrumentados — no incluye vistas de página, scroll ni otros
+          eventos automáticos de medición.</p>
+      </div>
+      <div class="kpis" id="kpis-web"></div>
+
+      <section class="panel">
+        <h2>Evolución de sesiones</h2>
+        <p class="subtitulo">Por día, dentro del período filtrado.</p>
+        <div id="chart-web-evolucion" class="grafico-alto"></div>
+      </section>
+
+      <div class="grid-2">
+        <section class="panel">
+          <h2>De dónde viene el tráfico</h2>
+          <p class="subtitulo">Sesiones por canal de adquisición.</p>
+          <div id="chart-web-canales" class="grafico-medio"></div>
+        </section>
+        <section class="panel">
+          <h2>Interacciones (CTA)</h2>
+          <p class="subtitulo">Clics, formularios y descargas del período filtrado.</p>
+          <div id="tabla-web-eventos"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <h2>Páginas más visitadas</h2>
+        <p class="subtitulo">Incluye las landings (ej. cursos, eventos puntuales) como páginas propias.</p>
+        <div id="tabla-web-paginas"></div>
       </section>
     </div>
   </section>

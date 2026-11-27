@@ -30,6 +30,7 @@ _ARCHIVOS_JS = (
     "template_analisis.js",
     "template_mailchimp.js",
     "template_roi.js",
+    "template_web.js",
     "template_main.js",
 )
 

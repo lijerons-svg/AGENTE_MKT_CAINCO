@@ -7,6 +7,10 @@ from marketing_analytics.dashboard.control_contenido.data_builder import (
 from marketing_analytics.database.repository import (
     upsert_calendario_publicaciones,
     upsert_control_perfiles,
+    upsert_ga4_metricas_canales,
+    upsert_ga4_metricas_diarias,
+    upsert_ga4_metricas_eventos,
+    upsert_ga4_metricas_paginas,
     upsert_mailchimp_campanas,
     upsert_mailchimp_enlaces_whatsapp,
     upsert_meta_ads,
@@ -15,6 +19,10 @@ from marketing_analytics.database.repository import (
 from marketing_analytics.models.records import (
     CalendarioPublicacion,
     ControlPerfilMensual,
+    GA4MetricaCanal,
+    GA4MetricaDiaria,
+    GA4MetricaEvento,
+    GA4MetricaPagina,
     MailchimpCampana,
     MailchimpEnlaceWhatsapp,
     MetaAdsRegistro,
@@ -265,3 +273,48 @@ def test_mailchimp_es_global_e_incluye_clics_whatsapp(conn):
     assert len(datos["mailchimp"]) == 1
     assert datos["mailchimp"][0]["nombre_campana"] == "Newsletter Julio"
     assert datos["mailchimp"][0]["clics_whatsapp"] == 12
+
+
+def test_ga4_queda_global_con_sus_cuatro_desgloses(conn):
+    """GA4 también queda a nivel raíz (no anidado en `unidades`): sus
+    "unidad" son sitios web, un set completamente distinto al de los
+    perfiles de Facebook/Instagram."""
+    upsert_ga4_metricas_diarias(
+        conn,
+        [GA4MetricaDiaria(
+            unidad="CAINCO Sitio Principal", property_id="476689307",
+            fecha=datetime.date(2026, 7, 1), sesiones=100, usuarios_totales=80, usuarios_nuevos=20,
+        )],
+    )
+    upsert_ga4_metricas_paginas(
+        conn,
+        [GA4MetricaPagina(
+            unidad="CAINCO Sitio Principal", property_id="476689307",
+            fecha=datetime.date(2026, 7, 1), pagina="/curso-emprendimiento", sesiones=10, vistas_pagina=15,
+        )],
+    )
+    upsert_ga4_metricas_canales(
+        conn,
+        [GA4MetricaCanal(
+            unidad="CAINCO Sitio Principal", property_id="476689307",
+            fecha=datetime.date(2026, 7, 1), canal="Organic Social", sesiones=40,
+        )],
+    )
+    upsert_ga4_metricas_eventos(
+        conn,
+        [GA4MetricaEvento(
+            unidad="CAINCO Sitio Principal", property_id="476689307",
+            fecha=datetime.date(2026, 7, 1), evento="contact_link_click", conteo=3,
+        )],
+    )
+
+    datos = construir_datos_control_contenido(conn, _CONFIG)
+
+    assert len(datos["ga4"]["diarias"]) == 1
+    assert datos["ga4"]["diarias"][0]["sesiones"] == 100
+    assert len(datos["ga4"]["paginas"]) == 1
+    assert datos["ga4"]["paginas"][0]["pagina"] == "/curso-emprendimiento"
+    assert len(datos["ga4"]["canales"]) == 1
+    assert datos["ga4"]["canales"][0]["canal"] == "Organic Social"
+    assert len(datos["ga4"]["eventos"]) == 1
+    assert datos["ga4"]["eventos"][0]["evento"] == "contact_link_click"
