@@ -2,9 +2,11 @@
 (sin el SDK oficial de Google, pesado) — mismo patrón liviano que los demás
 conectores.
 
-MVP: solo trae el total diario (sesiones, usuarios totales, usuarios
-nuevos) por propiedad. Desglose por canal/página/evento queda para una
-siguiente vuelta, reusando este mismo cliente.
+Trae el total diario (sesiones, usuarios totales, usuarios nuevos) por
+propiedad, y el desglose por página (las landings que arma CAINCO viven
+como páginas del sitio principal, no como propiedades separadas — ver
+GA4MetricaPagina). Desglose por canal de adquisición/evento de conversión
+queda para una siguiente vuelta, reusando este mismo cliente.
 """
 from __future__ import annotations
 
@@ -67,6 +69,46 @@ class GA4Client:
                     "sesiones": int(valores[0]["value"]),
                     "usuarios_totales": int(valores[1]["value"]),
                     "usuarios_nuevos": int(valores[2]["value"]),
+                }
+            )
+        return filas
+
+    def obtener_metricas_por_pagina(
+        self, property_id: str, desde: datetime.date, hasta: datetime.date
+    ) -> list[dict]:
+        """Devuelve una fila por día+página (sesiones, vistas de página),
+        para el rango [desde, hasta] (inclusive) — permite aislar el
+        tráfico de una landing puntual (ej. "/curso-emprendimiento") dentro
+        del sitio principal, sin necesitar una propiedad de Analytics
+        separada por landing."""
+        body = {
+            "dateRanges": [{"startDate": desde.isoformat(), "endDate": hasta.isoformat()}],
+            "dimensions": [{"name": "date"}, {"name": "pagePath"}],
+            "metrics": [
+                {"name": "sessions"},
+                {"name": "screenPageViews"},
+            ],
+        }
+        data = solicitar(
+            "POST",
+            f"{_BASE_URL}/properties/{property_id}:runReport",
+            headers=self._headers(),
+            json=body,
+        )
+
+        filas = []
+        for fila in data.get("rows", []):
+            fecha_ga4 = fila["dimensionValues"][0]["value"]  # "20260115"
+            pagina = fila["dimensionValues"][1]["value"]  # "/curso-emprendimiento"
+            valores = fila["metricValues"]
+            filas.append(
+                {
+                    "fecha": datetime.date(
+                        int(fecha_ga4[0:4]), int(fecha_ga4[4:6]), int(fecha_ga4[6:8])
+                    ),
+                    "pagina": pagina,
+                    "sesiones": int(valores[0]["value"]),
+                    "vistas_pagina": int(valores[1]["value"]),
                 }
             )
         return filas

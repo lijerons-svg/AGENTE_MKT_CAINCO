@@ -13,6 +13,7 @@ from marketing_analytics.models.records import (
     CalendarioPublicacion,
     ControlPerfilMensual,
     GA4MetricaDiaria,
+    GA4MetricaPagina,
     LinkedInOrganicoPost,
     MailchimpCampana,
     MailchimpEnlaceWhatsapp,
@@ -258,6 +259,25 @@ def upsert_ga4_metricas_diarias(
             "usuarios_nuevos": r.usuarios_nuevos,
         }
         tipo = _upsert_por_uid(conn, "ga4_metricas_diarias", r.uid, campos)
+        _registrar(resultado, tipo)
+    conn.commit()
+    return resultado
+
+
+def upsert_ga4_metricas_paginas(
+    conn: sqlite3.Connection, registros: list[GA4MetricaPagina]
+) -> ResultadoUpsert:
+    resultado = ResultadoUpsert()
+    for r in registros:
+        campos = {
+            "unidad": r.unidad,
+            "property_id": r.property_id,
+            "fecha": r.fecha.isoformat(),
+            "pagina": r.pagina,
+            "sesiones": r.sesiones,
+            "vistas_pagina": r.vistas_pagina,
+        }
+        tipo = _upsert_por_uid(conn, "ga4_metricas_paginas", r.uid, campos)
         _registrar(resultado, tipo)
     conn.commit()
     return resultado

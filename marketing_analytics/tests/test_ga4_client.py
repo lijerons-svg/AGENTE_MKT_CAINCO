@@ -75,6 +75,47 @@ def test_sin_filas_en_el_rango_devuelve_lista_vacia():
 
 
 @responses.activate
+def test_obtener_metricas_por_pagina_mapea_filas_de_ga4():
+    cliente = GA4Client("ruta/falsa.json", obtener_token_fn=_token_falso)
+    responses.add(
+        responses.POST,
+        f"{BASE}/properties/123456789:runReport",
+        json={
+            "rows": [
+                {
+                    "dimensionValues": [{"value": "20260715"}, {"value": "/curso-emprendimiento"}],
+                    "metricValues": [{"value": "5"}, {"value": "8"}],
+                },
+                {
+                    "dimensionValues": [{"value": "20260715"}, {"value": "/"}],
+                    "metricValues": [{"value": "100"}, {"value": "120"}],
+                },
+            ]
+        },
+        status=200,
+    )
+
+    filas = cliente.obtener_metricas_por_pagina(
+        "123456789", datetime.date(2026, 7, 15), datetime.date(2026, 7, 15)
+    )
+
+    assert filas == [
+        {
+            "fecha": datetime.date(2026, 7, 15),
+            "pagina": "/curso-emprendimiento",
+            "sesiones": 5,
+            "vistas_pagina": 8,
+        },
+        {
+            "fecha": datetime.date(2026, 7, 15),
+            "pagina": "/",
+            "sesiones": 100,
+            "vistas_pagina": 120,
+        },
+    ]
+
+
+@responses.activate
 def test_usa_el_token_que_devuelve_obtener_token_fn():
     llamadas = []
 

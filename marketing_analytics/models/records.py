@@ -245,6 +245,26 @@ class GA4MetricaDiaria(BaseModel):
         return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}"
 
 
+class GA4MetricaPagina(BaseModel):
+    """Un día de tráfico de UNA página puntual dentro de una propiedad de
+    GA4 — las landings que arma CAINCO (ej. "Curso de Emprendimiento") son
+    páginas del sitio principal, no propiedades separadas, así que esto es
+    lo que permite aislar su tráfico sin pedir acceso nuevo cada vez que se
+    crea una landing."""
+
+    fuente: str = Field(default="ga4_pagina", frozen=True)
+    unidad: str
+    property_id: str
+    fecha: datetime.date
+    pagina: str
+    sesiones: int = 0
+    vistas_pagina: int = 0
+
+    @property
+    def uid(self) -> str:
+        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.pagina}"
+
+
 class EjecucionLog(BaseModel):
     hora_inicio: datetime.datetime
     hora_fin: datetime.datetime | None = None
