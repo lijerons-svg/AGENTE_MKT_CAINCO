@@ -297,14 +297,14 @@ def test_ga4_queda_global_con_sus_cuatro_desgloses(conn):
         conn,
         [GA4MetricaCanal(
             unidad="CAINCO Sitio Principal", property_id="476689307",
-            fecha=datetime.date(2026, 7, 1), canal="Organic Social", sesiones=40,
+            fecha=datetime.date(2026, 7, 1), canal="Organic Social", pagina="/curso-emprendimiento", sesiones=40,
         )],
     )
     upsert_ga4_metricas_eventos(
         conn,
         [GA4MetricaEvento(
             unidad="CAINCO Sitio Principal", property_id="476689307",
-            fecha=datetime.date(2026, 7, 1), evento="contact_link_click", conteo=3,
+            fecha=datetime.date(2026, 7, 1), evento="contact_link_click", pagina="/curso-emprendimiento", conteo=3,
         )],
     )
 

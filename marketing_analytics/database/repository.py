@@ -297,6 +297,7 @@ def upsert_ga4_metricas_canales(
             "property_id": r.property_id,
             "fecha": r.fecha.isoformat(),
             "canal": r.canal,
+            "pagina": r.pagina,
             "sesiones": r.sesiones,
         }
         tipo = _upsert_por_uid(conn, "ga4_metricas_canales", r.uid, campos)
@@ -315,6 +316,7 @@ def upsert_ga4_metricas_eventos(
             "property_id": r.property_id,
             "fecha": r.fecha.isoformat(),
             "evento": r.evento,
+            "pagina": r.pagina,
             "conteo": r.conteo,
         }
         tipo = _upsert_por_uid(conn, "ga4_metricas_eventos", r.uid, campos)

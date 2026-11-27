@@ -27,6 +27,8 @@ _COLUMNAS_NUEVAS: tuple[tuple[str, str, str], ...] = (
     ("meta_ads", "fecha_fin_campana", "TEXT"),
     ("ga4_metricas_paginas", "usuarios_totales", "INTEGER NOT NULL DEFAULT 0"),
     ("ga4_metricas_paginas", "usuarios_nuevos", "INTEGER NOT NULL DEFAULT 0"),
+    ("ga4_metricas_canales", "pagina", "TEXT NOT NULL DEFAULT ''"),
+    ("ga4_metricas_eventos", "pagina", "TEXT NOT NULL DEFAULT ''"),
 )
 
 

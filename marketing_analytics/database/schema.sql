@@ -179,6 +179,7 @@ CREATE TABLE IF NOT EXISTS ga4_metricas_canales (
     property_id TEXT NOT NULL,
     fecha TEXT NOT NULL,
     canal TEXT NOT NULL,
+    pagina TEXT NOT NULL DEFAULT '',
     sesiones INTEGER NOT NULL DEFAULT 0,
     creado_en TEXT NOT NULL DEFAULT (datetime('now')),
     actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
@@ -191,6 +192,7 @@ CREATE TABLE IF NOT EXISTS ga4_metricas_eventos (
     property_id TEXT NOT NULL,
     fecha TEXT NOT NULL,
     evento TEXT NOT NULL,
+    pagina TEXT NOT NULL DEFAULT '',
     conteo INTEGER NOT NULL DEFAULT 0,
     creado_en TEXT NOT NULL DEFAULT (datetime('now')),
     actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))

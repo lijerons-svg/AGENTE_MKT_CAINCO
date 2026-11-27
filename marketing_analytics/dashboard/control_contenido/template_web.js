@@ -67,15 +67,20 @@ function webPaginasFiltradas() {
   return filtrarPorAnioMes(porUnidad, 'fecha', estado.aniosWeb, estado.mesesWeb);
 }
 
+function webFiltrarPagina(filas) {
+  return estado.paginaWeb ? filas.filter((f) => f.pagina === estado.paginaWeb) : filas;
+}
+
 function webCanalesFiltrados() {
   const porUnidad = webFiltrarUnidad(DATA.ga4.canales || []);
-  return filtrarPorAnioMes(porUnidad, 'fecha', estado.aniosWeb, estado.mesesWeb);
+  const porPeriodo = filtrarPorAnioMes(porUnidad, 'fecha', estado.aniosWeb, estado.mesesWeb);
+  return webFiltrarPagina(porPeriodo);
 }
 
 function webEventosFiltrados() {
   const porUnidad = webFiltrarUnidad(DATA.ga4.eventos || []);
   const porPeriodo = filtrarPorAnioMes(porUnidad, 'fecha', estado.aniosWeb, estado.mesesWeb);
-  return porPeriodo.filter((f) => WEB_EVENTOS_CTA.includes(f.evento));
+  return webFiltrarPagina(porPeriodo).filter((f) => WEB_EVENTOS_CTA.includes(f.evento));
 }
 
 function renderFiltrosWeb() {
@@ -118,9 +123,7 @@ function renderKpisWeb(diarias, paginas, eventos) {
 
   // Con una página seleccionada, Sesiones/Usuarios/Usuarios nuevos/Vistas
   // de página pasan a ser SOLO de esa página (el dato por página de GA4
-  // ya trae estas 4 métricas). "Interacciones (CTA)" sigue siendo del
-  // sitio completo siempre: GA4 no nos da el evento desglosado por
-  // página puntual (ver nota fija del panel).
+  // ya trae estas 4 métricas).
   const paginaSeleccionada = estado.paginaWeb ? paginas.filter((f) => f.pagina === estado.paginaWeb) : null;
   const fuente = paginaSeleccionada || diarias;
 
@@ -128,8 +131,10 @@ function renderKpisWeb(diarias, paginas, eventos) {
   kpi(cont, 'Usuarios', fmtNum.format(sum(fuente, 'usuarios_totales')));
   kpi(cont, 'Usuarios nuevos', fmtNum.format(sum(fuente, 'usuarios_nuevos')));
   kpi(cont, 'Vistas de página', fmtNum.format(sum(paginaSeleccionada || paginas, 'vistas_pagina')));
+  // `eventos` ya viene filtrado por la página seleccionada (ver
+  // webEventosFiltrados), así que esta suma también es solo de esa página.
   kpi(cont, 'Interacciones (CTA)', fmtNum.format(sum(eventos, 'conteo')), {
-    info: 'Suma de clics en botones de contacto/consultas/ecommerce, formularios enviados, descargas y clics a links externos — no incluye vistas de página ni otros eventos automáticos de medición. Es siempre del sitio completo, incluso con una página seleccionada.',
+    info: 'Suma de clics en botones de contacto/consultas/ecommerce, formularios enviados, descargas y clics a links externos — no incluye vistas de página ni otros eventos automáticos de medición.',
   });
 }
 
@@ -166,6 +171,13 @@ function renderChartWebEvolucion(diarias, paginas) {
 }
 
 function renderChartWebCanales(canales) {
+  const subtitulo = document.getElementById('subtitulo-canales-web');
+  if (subtitulo) {
+    subtitulo.textContent = estado.paginaWeb
+      ? `Sesiones por canal de adquisición, solo para "${estado.paginaWeb}".`
+      : 'Sesiones por canal de adquisición.';
+  }
+
   const porCanal = {};
   canales.forEach((f) => {
     porCanal[f.canal] = (porCanal[f.canal] || 0) + (Number(f.sesiones) || 0);
@@ -189,6 +201,13 @@ function renderChartWebCanales(canales) {
 }
 
 function renderTablaWebEventos(eventos) {
+  const subtitulo = document.getElementById('subtitulo-eventos-web');
+  if (subtitulo) {
+    subtitulo.textContent = estado.paginaWeb
+      ? `Clics, formularios y descargas, solo para "${estado.paginaWeb}".`
+      : 'Clics, formularios y descargas del período filtrado.';
+  }
+
   const porEvento = {};
   eventos.forEach((f) => {
     porEvento[f.evento] = (porEvento[f.evento] || 0) + (Number(f.conteo) || 0);

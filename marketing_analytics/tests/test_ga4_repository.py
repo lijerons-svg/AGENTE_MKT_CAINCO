@@ -104,11 +104,14 @@ def test_correr_de_nuevo_la_misma_pagina_actualiza_no_duplica(conn):
     assert filas[0]["sesiones"] == 9
 
 
-def _metrica_canal(fecha=datetime.date(2026, 7, 1), canal="Organic Social", sesiones=61, property_id="476689307"):
+def _metrica_canal(
+    fecha=datetime.date(2026, 7, 1), canal="Organic Social", pagina="/", sesiones=61, property_id="476689307"
+):
     from marketing_analytics.models.records import GA4MetricaCanal
 
     return GA4MetricaCanal(
-        unidad="CAINCO Sitio Principal", property_id=property_id, fecha=fecha, canal=canal, sesiones=sesiones
+        unidad="CAINCO Sitio Principal", property_id=property_id, fecha=fecha, canal=canal,
+        pagina=pagina, sesiones=sesiones,
     )
 
 
@@ -120,7 +123,7 @@ def test_metrica_canal_nueva_se_inserta(conn):
     assert resultado.nuevos == 1
     fila = conn.execute(
         "SELECT * FROM ga4_metricas_canales WHERE uid = ?",
-        ("ga4_canal|476689307|2026-07-01|Organic Social",),
+        ("ga4_canal|476689307|2026-07-01|Organic Social|/",),
     ).fetchone()
     assert fila["sesiones"] == 61
 
@@ -135,11 +138,24 @@ def test_dos_canales_distintos_el_mismo_dia_no_colisionan(conn):
     assert [(f["canal"], f["sesiones"]) for f in filas] == [("Direct", 20), ("Organic Social", 61)]
 
 
-def _metrica_evento(fecha=datetime.date(2026, 7, 1), evento="contact_link_click", conteo=7, property_id="476689307"):
+def test_mismo_canal_en_dos_paginas_no_colisiona(conn):
+    from marketing_analytics.database.repository import upsert_ga4_metricas_canales
+
+    upsert_ga4_metricas_canales(conn, [_metrica_canal(pagina="/", sesiones=61)])
+    upsert_ga4_metricas_canales(conn, [_metrica_canal(pagina="/curso-x", sesiones=9)])
+
+    filas = conn.execute("SELECT pagina, sesiones FROM ga4_metricas_canales ORDER BY pagina").fetchall()
+    assert [(f["pagina"], f["sesiones"]) for f in filas] == [("/", 61), ("/curso-x", 9)]
+
+
+def _metrica_evento(
+    fecha=datetime.date(2026, 7, 1), evento="contact_link_click", pagina="/", conteo=7, property_id="476689307"
+):
     from marketing_analytics.models.records import GA4MetricaEvento
 
     return GA4MetricaEvento(
-        unidad="CAINCO Sitio Principal", property_id=property_id, fecha=fecha, evento=evento, conteo=conteo
+        unidad="CAINCO Sitio Principal", property_id=property_id, fecha=fecha, evento=evento,
+        pagina=pagina, conteo=conteo,
     )
 
 
@@ -151,7 +167,7 @@ def test_metrica_evento_nueva_se_inserta(conn):
     assert resultado.nuevos == 1
     fila = conn.execute(
         "SELECT * FROM ga4_metricas_eventos WHERE uid = ?",
-        ("ga4_evento|476689307|2026-07-01|contact_link_click",),
+        ("ga4_evento|476689307|2026-07-01|contact_link_click|/",),
     ).fetchone()
     assert fila["conteo"] == 7
 

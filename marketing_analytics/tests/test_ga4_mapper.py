@@ -55,23 +55,25 @@ def test_mapear_fila_pagina():
 
 def test_mapear_fila_canal():
     propiedad = PropiedadGA4(unidad="CAINCO Sitio Principal", property_id="476689307")
-    fila = {"fecha": datetime.date(2026, 7, 15), "canal": "Organic Social", "sesiones": 61}
+    fila = {"fecha": datetime.date(2026, 7, 15), "canal": "Organic Social", "pagina": "/", "sesiones": 61}
 
     registro = mapear_fila_canal(propiedad, fila)
 
     assert registro.unidad == "CAINCO Sitio Principal"
     assert registro.canal == "Organic Social"
+    assert registro.pagina == "/"
     assert registro.sesiones == 61
-    assert registro.uid == "ga4_canal|476689307|2026-07-15|Organic Social"
+    assert registro.uid == "ga4_canal|476689307|2026-07-15|Organic Social|/"
 
 
 def test_mapear_fila_evento():
     propiedad = PropiedadGA4(unidad="CAINCO Sitio Principal", property_id="476689307")
-    fila = {"fecha": datetime.date(2026, 7, 15), "evento": "contact_link_click", "conteo": 7}
+    fila = {"fecha": datetime.date(2026, 7, 15), "evento": "contact_link_click", "pagina": "/", "conteo": 7}
 
     registro = mapear_fila_evento(propiedad, fila)
 
     assert registro.unidad == "CAINCO Sitio Principal"
     assert registro.evento == "contact_link_click"
+    assert registro.pagina == "/"
     assert registro.conteo == 7
-    assert registro.uid == "ga4_evento|476689307|2026-07-15|contact_link_click"
+    assert registro.uid == "ga4_evento|476689307|2026-07-15|contact_link_click|/"

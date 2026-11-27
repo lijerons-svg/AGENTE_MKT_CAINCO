@@ -165,15 +165,19 @@ def _construir_datos_ga4(conn: sqlite3.Connection) -> dict:
         "canales": _filas_a_dicts(
             conn,
             """
-            SELECT unidad, property_id, fecha, canal, sesiones
-            FROM ga4_metricas_canales ORDER BY fecha
+            SELECT unidad, property_id, fecha, canal, pagina, sesiones
+            FROM ga4_metricas_canales
+            WHERE pagina != ''  -- descarta filas de antes de que esta tabla incluyera página
+            ORDER BY fecha
             """,
         ),
         "eventos": _filas_a_dicts(
             conn,
             """
-            SELECT unidad, property_id, fecha, evento, conteo
-            FROM ga4_metricas_eventos ORDER BY fecha
+            SELECT unidad, property_id, fecha, evento, pagina, conteo
+            FROM ga4_metricas_eventos
+            WHERE pagina != ''  -- descarta filas de antes de que esta tabla incluyera página
+            ORDER BY fecha
             """,
         ),
     }

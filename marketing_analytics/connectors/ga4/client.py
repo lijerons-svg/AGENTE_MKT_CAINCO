@@ -124,13 +124,14 @@ class GA4Client:
     def obtener_metricas_por_canal(
         self, property_id: str, desde: datetime.date, hasta: datetime.date
     ) -> list[dict]:
-        """Devuelve una fila por día+canal (sesiones) — de dónde viene el
-        tráfico: Organic Social, Organic Search, Direct, Paid Social,
-        Referral, etc. (agrupación estándar de GA4, "Default channel
-        group")."""
+        """Devuelve una fila por día+canal+página (sesiones) — de dónde
+        viene el tráfico: Organic Social, Organic Search, Direct, Paid
+        Social, Referral, etc. (agrupación estándar de GA4, "Default
+        channel group"). Incluye la página para poder ver de dónde viene
+        el tráfico de UNA landing puntual, no solo del sitio entero."""
         body = {
             "dateRanges": [{"startDate": desde.isoformat(), "endDate": hasta.isoformat()}],
-            "dimensions": [{"name": "date"}, {"name": "sessionDefaultChannelGroup"}],
+            "dimensions": [{"name": "date"}, {"name": "sessionDefaultChannelGroup"}, {"name": "pagePath"}],
             "metrics": [{"name": "sessions"}],
         }
         data = solicitar(
@@ -144,6 +145,7 @@ class GA4Client:
         for fila in data.get("rows", []):
             fecha_ga4 = fila["dimensionValues"][0]["value"]
             canal = fila["dimensionValues"][1]["value"]  # "Organic Social", "Direct", etc.
+            pagina = fila["dimensionValues"][2]["value"]
             valores = fila["metricValues"]
             filas.append(
                 {
@@ -151,6 +153,7 @@ class GA4Client:
                         int(fecha_ga4[0:4]), int(fecha_ga4[4:6]), int(fecha_ga4[6:8])
                     ),
                     "canal": canal,
+                    "pagina": pagina,
                     "sesiones": int(valores[0]["value"]),
                 }
             )
@@ -159,16 +162,17 @@ class GA4Client:
     def obtener_metricas_por_evento(
         self, property_id: str, desde: datetime.date, hasta: datetime.date
     ) -> list[dict]:
-        """Devuelve una fila por día+evento (cantidad) — todos los eventos
-        que GA4 ya esté registrando (clics, envíos de formulario,
+        """Devuelve una fila por día+evento+página (cantidad) — todos los
+        eventos que GA4 ya esté registrando (clics, envíos de formulario,
         descargas, y cualquier evento de "llamado a la acción" que un
         desarrollador haya instrumentado a mano, ej. "contact_link_click").
         No filtra a "conversiones" marcadas como tales en GA4 (eso requiere
         la Admin API, no la Data API que usa este cliente) — trae todos, el
-        dashboard decide cuáles mostrar como relevantes."""
+        dashboard decide cuáles mostrar como relevantes. Incluye la página
+        para poder ver las interacciones de UNA landing puntual."""
         body = {
             "dateRanges": [{"startDate": desde.isoformat(), "endDate": hasta.isoformat()}],
-            "dimensions": [{"name": "date"}, {"name": "eventName"}],
+            "dimensions": [{"name": "date"}, {"name": "eventName"}, {"name": "pagePath"}],
             "metrics": [{"name": "eventCount"}],
         }
         data = solicitar(
@@ -182,6 +186,7 @@ class GA4Client:
         for fila in data.get("rows", []):
             fecha_ga4 = fila["dimensionValues"][0]["value"]
             evento = fila["dimensionValues"][1]["value"]  # "contact_link_click", "click", etc.
+            pagina = fila["dimensionValues"][2]["value"]
             valores = fila["metricValues"]
             filas.append(
                 {
@@ -189,6 +194,7 @@ class GA4Client:
                         int(fecha_ga4[0:4]), int(fecha_ga4[4:6]), int(fecha_ga4[6:8])
                     ),
                     "evento": evento,
+                    "pagina": pagina,
                     "conteo": int(valores[0]["value"]),
                 }
             )

@@ -277,11 +277,14 @@ class GA4MetricaCanal(BaseModel):
     property_id: str
     fecha: datetime.date
     canal: str
+    # Página de la que vino ese tráfico — permite ver de dónde viene el
+    # tráfico de UNA landing puntual, no solo del sitio entero.
+    pagina: str
     sesiones: int = 0
 
     @property
     def uid(self) -> str:
-        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.canal}"
+        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.canal}|{self.pagina}"
 
 
 class GA4MetricaEvento(BaseModel):
@@ -294,11 +297,14 @@ class GA4MetricaEvento(BaseModel):
     property_id: str
     fecha: datetime.date
     evento: str
+    # Página en la que ocurrió ese evento — permite ver las interacciones
+    # de UNA landing puntual, no solo del sitio entero.
+    pagina: str
     conteo: int = 0
 
     @property
     def uid(self) -> str:
-        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.evento}"
+        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}|{self.evento}|{self.pagina}"
 
 
 class EjecucionLog(BaseModel):

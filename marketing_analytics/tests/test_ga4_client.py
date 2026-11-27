@@ -147,11 +147,11 @@ def test_obtener_metricas_por_canal_mapea_filas_de_ga4():
         json={
             "rows": [
                 {
-                    "dimensionValues": [{"value": "20260715"}, {"value": "Organic Social"}],
+                    "dimensionValues": [{"value": "20260715"}, {"value": "Organic Social"}, {"value": "/"}],
                     "metricValues": [{"value": "61"}],
                 },
                 {
-                    "dimensionValues": [{"value": "20260715"}, {"value": "Direct"}],
+                    "dimensionValues": [{"value": "20260715"}, {"value": "Direct"}, {"value": "/curso-x"}],
                     "metricValues": [{"value": "20"}],
                 },
             ]
@@ -164,8 +164,8 @@ def test_obtener_metricas_por_canal_mapea_filas_de_ga4():
     )
 
     assert filas == [
-        {"fecha": datetime.date(2026, 7, 15), "canal": "Organic Social", "sesiones": 61},
-        {"fecha": datetime.date(2026, 7, 15), "canal": "Direct", "sesiones": 20},
+        {"fecha": datetime.date(2026, 7, 15), "canal": "Organic Social", "pagina": "/", "sesiones": 61},
+        {"fecha": datetime.date(2026, 7, 15), "canal": "Direct", "pagina": "/curso-x", "sesiones": 20},
     ]
 
 
@@ -178,11 +178,11 @@ def test_obtener_metricas_por_evento_mapea_filas_de_ga4():
         json={
             "rows": [
                 {
-                    "dimensionValues": [{"value": "20260715"}, {"value": "contact_link_click"}],
+                    "dimensionValues": [{"value": "20260715"}, {"value": "contact_link_click"}, {"value": "/"}],
                     "metricValues": [{"value": "7"}],
                 },
                 {
-                    "dimensionValues": [{"value": "20260715"}, {"value": "page_view"}],
+                    "dimensionValues": [{"value": "20260715"}, {"value": "page_view"}, {"value": "/curso-x"}],
                     "metricValues": [{"value": "320"}],
                 },
             ]
@@ -195,6 +195,6 @@ def test_obtener_metricas_por_evento_mapea_filas_de_ga4():
     )
 
     assert filas == [
-        {"fecha": datetime.date(2026, 7, 15), "evento": "contact_link_click", "conteo": 7},
-        {"fecha": datetime.date(2026, 7, 15), "evento": "page_view", "conteo": 320},
+        {"fecha": datetime.date(2026, 7, 15), "evento": "contact_link_click", "pagina": "/", "conteo": 7},
+        {"fecha": datetime.date(2026, 7, 15), "evento": "page_view", "pagina": "/curso-x", "conteo": 320},
     ]

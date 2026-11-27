@@ -39,6 +39,7 @@ def mapear_fila_canal(propiedad: PropiedadGA4, fila: dict) -> GA4MetricaCanal:
         property_id=propiedad.property_id,
         fecha=fila["fecha"],
         canal=fila["canal"],
+        pagina=fila["pagina"],
         sesiones=fila["sesiones"],
     )
 
@@ -49,5 +50,6 @@ def mapear_fila_evento(propiedad: PropiedadGA4, fila: dict) -> GA4MetricaEvento:
         property_id=propiedad.property_id,
         fecha=fila["fecha"],
         evento=fila["evento"],
+        pagina=fila["pagina"],
         conteo=fila["conteo"],
     )

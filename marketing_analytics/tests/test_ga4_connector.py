@@ -66,7 +66,7 @@ def test_fetch_tambien_trae_el_desglose_por_pagina():
 def test_fetch_tambien_trae_el_desglose_por_canal():
     config = GA4Config(propiedades=[PropiedadGA4(unidad="CAINCO Sitio Principal", property_id="111")])
     cliente_falso = _cliente_falso(
-        filas_canales=[{"fecha": datetime.date(2026, 7, 1), "canal": "Organic Social", "sesiones": 42}]
+        filas_canales=[{"fecha": datetime.date(2026, 7, 1), "canal": "Organic Social", "pagina": "/", "sesiones": 42}]
     )
 
     conector = GA4Connector(config, ruta_credenciales="fake.json", cliente=cliente_falso)
@@ -80,7 +80,7 @@ def test_fetch_tambien_trae_el_desglose_por_canal():
 def test_fetch_tambien_trae_el_desglose_por_evento():
     config = GA4Config(propiedades=[PropiedadGA4(unidad="CAINCO Sitio Principal", property_id="111")])
     cliente_falso = _cliente_falso(
-        filas_eventos=[{"fecha": datetime.date(2026, 7, 1), "evento": "contact_link_click", "conteo": 7}]
+        filas_eventos=[{"fecha": datetime.date(2026, 7, 1), "evento": "contact_link_click", "pagina": "/", "conteo": 7}]
     )
 
     conector = GA4Connector(config, ruta_credenciales="fake.json", cliente=cliente_falso)
@@ -137,8 +137,8 @@ def test_upsert_delega_al_repositorio(conn):
         filas_paginas=[
             {"fecha": datetime.date(2026, 7, 1), "pagina": "/curso-x", "sesiones": 3, "vistas_pagina": 4, "usuarios_totales": 2, "usuarios_nuevos": 1}
         ],
-        filas_canales=[{"fecha": datetime.date(2026, 7, 1), "canal": "Direct", "sesiones": 6}],
-        filas_eventos=[{"fecha": datetime.date(2026, 7, 1), "evento": "btn_consultas", "conteo": 2}],
+        filas_canales=[{"fecha": datetime.date(2026, 7, 1), "canal": "Direct", "pagina": "/curso-x", "sesiones": 6}],
+        filas_eventos=[{"fecha": datetime.date(2026, 7, 1), "evento": "btn_consultas", "pagina": "/curso-x", "conteo": 2}],
     )
     conector = GA4Connector(config, ruta_credenciales="fake.json", cliente=cliente_falso)
     datos = conector.fetch(datetime.date(2026, 7, 1), datetime.date(2026, 7, 1))
