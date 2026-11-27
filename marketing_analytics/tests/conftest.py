@@ -24,3 +24,4 @@ def _entorno_de_secretos_limpio(monkeypatch):
     esperaban esas variables ausentes. Se limpian antes de cada test."""
     monkeypatch.delenv("META_SYSTEM_USER_TOKEN", raising=False)
     monkeypatch.delenv("MAILCHIMP_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_SERVICE_ACCOUNT_JSON_PATH", raising=False)
