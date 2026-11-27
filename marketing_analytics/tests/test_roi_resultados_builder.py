@@ -460,3 +460,49 @@ def test_leer_resumen_por_evento_sin_archivo_devuelve_lista_vacia():
     from marketing_analytics.reports.roi_resultados_builder import leer_resumen_por_evento
 
     assert leer_resumen_por_evento(Path(tempfile.mkdtemp()) / "no_existe.xlsx") == []
+
+
+def test_leer_resumen_por_evento_calcula_costo_lead_conversion_y_roi_sin_depender_de_excel(conn):
+    """Caso real de QA (Sandy): Costo por lead/% de conversión/ROI son
+    fórmulas de Excel (IFERROR) que `generar_roi_resultados` reescribe en
+    cada corrida de la automatización — openpyxl nunca deja un valor
+    cacheado en una fórmula recién escrita, Excel lo calcula solo cuando
+    alguien abre el archivo a mano. Como nadie abre el archivo entre que la
+    automatización lo escribe y el dashboard lo lee, leer esas 3 celdas
+    directamente siempre daba "pendiente" — aunque Leads/Subscribers/Revenue
+    sí estuvieran cargados. Por eso se calculan acá en Python, no se leen
+    de Excel."""
+    from marketing_analytics.reports.roi_resultados_builder import leer_resumen_por_evento
+
+    ruta_roi, ruta_resultados = _rutas()
+    upsert_meta_ads(conn, [_registro(datetime.date(2026, 7, 1), "facebook", 100.0)])
+    generar_roi_campanas(conn, ruta_roi)
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb = openpyxl.load_workbook(ruta_resultados)
+    _asignar_evento(wb.active, "camp_1", "Rueda de Negocios")
+    wb.save(ruta_resultados)
+    generar_roi_resultados(ruta_roi, ruta_resultados)  # agrupa en "Resumen por Evento"
+
+    wb2 = openpyxl.load_workbook(ruta_resultados)
+    resumen = wb2["Resumen por Evento"]
+    resumen["E2"] = 1008  # Leads
+    resumen["F2"] = 109  # Subscribers
+    resumen["G2"] = 18858  # Revenue
+    wb2.save(ruta_resultados)
+
+    # Esta corrida reescribe las fórmulas de Costo por lead/% de
+    # conversión/ROI (columnas H/I/J) SIN ningún valor cacheado todavía —
+    # exactamente como las deja la automatización real.
+    generar_roi_resultados(ruta_roi, ruta_resultados)
+
+    wb3 = openpyxl.load_workbook(ruta_resultados)
+    resumen3 = wb3["Resumen por Evento"]
+    assert resumen3["H2"].value == '=IFERROR(D2/E2,"")'  # sigue siendo una fórmula sin calcular
+
+    eventos = leer_resumen_por_evento(ruta_resultados)
+
+    assert eventos[0]["leads"] == 1008
+    assert eventos[0]["costo_por_lead"] == pytest.approx(100.0 / 1008)
+    assert eventos[0]["conversion"] == pytest.approx(109 / 1008)
+    assert eventos[0]["roi"] == pytest.approx((18858 - 100.0) / 100.0)

@@ -293,11 +293,17 @@ def _rango_mes_legible(meses: list[tuple[int, int]]) -> str:
     return f"{_MESES[inicio[1] - 1]} {inicio[0]} – {_MESES[fin[1] - 1]} {fin[0]}"
 
 
-def _valor_formula(valor):
-    """Costo por lead, % de conversión y ROI son fórmulas con
-    IFERROR(..., "") — cuando faltan Leads, Excel cachea "" (texto), que acá
-    representa "pendiente" igual que None, nunca un cero real."""
-    return None if valor == "" else valor
+def _dividir(numerador, denominador):
+    """Mismo cálculo que las fórmulas IFERROR de Excel (ver
+    _escribir_formulas_resumen), pero hecho acá en Python en vez de leer el
+    valor que Excel dejó cacheado en el archivo. Bug real de QA: una fórmula
+    recién escrita por openpyxl no tiene ningún valor cacheado todavía —
+    Excel solo lo calcula cuando alguien abre el archivo a mano — así que
+    leer la celda con data_only daba "pendiente" aunque Leads/Subscribers/
+    Revenue sí estuvieran cargados, apenas corría la automatización."""
+    if not denominador or numerador is None:
+        return None
+    return numerador / denominador
 
 
 def leer_resumen_por_evento(ruta_roi_resultados: str | Path) -> list[dict]:
@@ -333,17 +339,22 @@ def leer_resumen_por_evento(ruta_roi_resultados: str | Path) -> list[dict]:
             continue
         meses_evento = sorted(meses_por_evento.get(_normalizar_nombre(nombre), set()))
 
+        inversion_total = ws_resumen.cell(row=fila_idx, column=cols["Inversión total"]).value
+        leads = ws_resumen.cell(row=fila_idx, column=cols["Leads"]).value
+        subscribers = ws_resumen.cell(row=fila_idx, column=cols["Subscribers"]).value
+        revenue = ws_resumen.cell(row=fila_idx, column=cols["Revenue"]).value
+
         eventos.append({
             "nombre_evento": nombre,
             "tipo": ws_resumen.cell(row=fila_idx, column=cols["Tipo"]).value,
             "unidad": ws_resumen.cell(row=fila_idx, column=cols["Unidad"]).value,
-            "inversion_total": ws_resumen.cell(row=fila_idx, column=cols["Inversión total"]).value,
-            "leads": ws_resumen.cell(row=fila_idx, column=cols["Leads"]).value,
-            "subscribers": ws_resumen.cell(row=fila_idx, column=cols["Subscribers"]).value,
-            "revenue": ws_resumen.cell(row=fila_idx, column=cols["Revenue"]).value,
-            "costo_por_lead": _valor_formula(ws_resumen.cell(row=fila_idx, column=cols["Costo por lead"]).value),
-            "conversion": _valor_formula(ws_resumen.cell(row=fila_idx, column=cols["% de conversión"]).value),
-            "roi": _valor_formula(ws_resumen.cell(row=fila_idx, column=cols["ROI"]).value),
+            "inversion_total": inversion_total,
+            "leads": leads,
+            "subscribers": subscribers,
+            "revenue": revenue,
+            "costo_por_lead": _dividir(inversion_total, leads),
+            "conversion": _dividir(subscribers, leads),
+            "roi": _dividir(None if revenue is None else revenue - (inversion_total or 0), inversion_total),
             "mes": _rango_mes_legible(meses_evento),
             "mes_orden": (meses_evento[0][0] * 12 + meses_evento[0][1]) if meses_evento else 0,
             "meses": [f"{_MESES[m - 1]} {a}" for a, m in meses_evento],
