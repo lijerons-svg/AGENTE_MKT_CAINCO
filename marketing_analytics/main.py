@@ -99,11 +99,14 @@ def main(config_path: str, env_path: str | None, desde_str: str | None, hasta_st
 
             ruta_excel = generar_historico_excel(conn, output_dir / "Historico_RRSS.xlsx", config)
             ruta_dashboard = generar_dashboard(conn, output_dir / "Dashboard.html")
-            ruta_control_contenido = generar_control_contenido(
-                conn, config, output_dir / "ControlContenido.html"
-            )
+            # ROI antes que ControlContenido: el tab ROI del dashboard lee
+            # ROI_Resultados.xlsx, así que tiene que existir (actualizado)
+            # ANTES de armar el dashboard, no después.
             ruta_roi = generar_roi_campanas(conn, output_dir / "ROI_Campanas.xlsx")
             ruta_resultados = generar_roi_resultados(ruta_roi, output_dir / "ROI_Resultados.xlsx")
+            ruta_control_contenido = generar_control_contenido(
+                conn, config, output_dir / "ControlContenido.html", ruta_roi_resultados=ruta_resultados
+            )
             ruta_log = escribir_log_ejecucion(conn, resumen, output_dir / "Log_Ejecucion.txt")
     except PermissionError as error:
         click.echo(
