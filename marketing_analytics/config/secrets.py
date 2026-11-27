@@ -21,6 +21,11 @@ class Secrets(BaseModel):
     sharepoint_client_id: str = ""
     sharepoint_client_secret: str = ""
     linkedin_access_token: str = ""
+    # Ruta al archivo .json de la cuenta de servicio de Google (descargado
+    # desde Google Cloud Console) — a diferencia de los demás secretos, GA4
+    # se autentica con ese archivo entero, no con un token de una sola
+    # línea, así que acá se guarda dónde está, nunca su contenido.
+    google_service_account_json_path: str = ""
 
     @classmethod
     def from_env(cls) -> "Secrets":
@@ -31,4 +36,5 @@ class Secrets(BaseModel):
             sharepoint_client_id=os.environ.get("SHAREPOINT_CLIENT_ID", ""),
             sharepoint_client_secret=os.environ.get("SHAREPOINT_CLIENT_SECRET", ""),
             linkedin_access_token=os.environ.get("LINKEDIN_ACCESS_TOKEN", ""),
+            google_service_account_json_path=os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON_PATH", ""),
         )

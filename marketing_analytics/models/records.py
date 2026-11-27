@@ -226,6 +226,25 @@ class ControlPerfilMensual(BaseModel):
         return f"{self.fuente}|{self.perfil}|{self.anio_mes}"
 
 
+class GA4MetricaDiaria(BaseModel):
+    """Un día de tráfico de una propiedad de Google Analytics 4. `unidad` es
+    la unidad de negocio (ej. "Academy Cainco") a la que corresponde esa
+    propiedad — la misma unidad que usan los perfiles de Meta Orgánico, para
+    poder cruzar tráfico del sitio con redes sociales de la misma marca."""
+
+    fuente: str = Field(default="ga4", frozen=True)
+    unidad: str
+    property_id: str
+    fecha: datetime.date
+    sesiones: int = 0
+    usuarios_totales: int = 0
+    usuarios_nuevos: int = 0
+
+    @property
+    def uid(self) -> str:
+        return f"{self.fuente}|{self.property_id}|{self.fecha.isoformat()}"
+
+
 class EjecucionLog(BaseModel):
     hora_inicio: datetime.datetime
     hora_fin: datetime.datetime | None = None

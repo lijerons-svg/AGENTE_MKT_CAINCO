@@ -189,6 +189,22 @@ class LinkedInConfig(BaseModel):
         return self
 
 
+class PropiedadGA4(BaseModel):
+    """Una propiedad de Google Analytics 4 (un sitio o sub-sitio), igual que
+    un perfil de Meta Orgánico — una entrada más acá, nunca un cambio de
+    código. `unidad` debe coincidir con la que ya se usa en
+    meta.organico.perfiles para poder cruzar tráfico del sitio con redes
+    sociales de la misma marca."""
+
+    unidad: str
+    property_id: str
+
+
+class GA4Config(BaseModel):
+    enabled: bool = False
+    propiedades: list[PropiedadGA4] = Field(default_factory=list)
+
+
 class PerfilCompetidor(BaseModel):
     """Una página de Facebook de un competidor, para el reporte PPT.
 
@@ -221,5 +237,6 @@ class AppConfig(BaseModel):
     mailchimp: MailchimpConfig
     calendario: CalendarioConfig = Field(default_factory=CalendarioConfig)
     linkedin: LinkedInConfig = Field(default_factory=LinkedInConfig)
+    ga4: GA4Config = Field(default_factory=GA4Config)
     competencia: CompetenciaConfig = Field(default_factory=CompetenciaConfig)
     reportes_pptx: ReportesPptxConfig = Field(default_factory=ReportesPptxConfig)

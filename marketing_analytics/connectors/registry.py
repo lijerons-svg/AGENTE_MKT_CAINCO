@@ -13,6 +13,7 @@ from marketing_analytics.connectors.calendario_sharepoint.connector import (
     CalendarioSharePointConnector,
 )
 from marketing_analytics.connectors.control_perfiles.connector import ControlPerfilesConnector
+from marketing_analytics.connectors.ga4.connector import GA4Connector
 from marketing_analytics.connectors.linkedin.connector import LinkedInConnector
 from marketing_analytics.connectors.mailchimp.connector import MailchimpConnector
 from marketing_analytics.connectors.meta_ads.connector import MetaAdsConnector
@@ -94,5 +95,13 @@ def construir_conectores_activos(config: AppConfig, secrets: Secrets) -> list[Ba
                 ".env — correr python -m marketing_analytics.connectors.linkedin.obtener_token."
             )
         conectores.append(LinkedInConnector(config.linkedin, secrets.linkedin_access_token))
+
+    if config.ga4.enabled:
+        if not secrets.google_service_account_json_path:
+            raise RuntimeError(
+                "config.yaml tiene ga4.enabled: true, pero falta "
+                "GOOGLE_SERVICE_ACCOUNT_JSON_PATH en el .env."
+            )
+        conectores.append(GA4Connector(config.ga4, secrets.google_service_account_json_path))
 
     return conectores

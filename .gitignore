@@ -18,3 +18,5 @@ marketing_analytics/**/__pycache__/
 marketing_analytics/.pytest_cache/
 marketing_analytics/database/*.db
 marketing_analytics/output/
+marketing_analytics/secrets/
+marketing_analytics/*service-account*.json

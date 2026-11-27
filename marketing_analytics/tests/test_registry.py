@@ -6,6 +6,7 @@ from marketing_analytics.connectors.calendario_sharepoint.connector import (
     CalendarioSharePointConnector,
 )
 from marketing_analytics.connectors.control_perfiles.connector import ControlPerfilesConnector
+from marketing_analytics.connectors.ga4.connector import GA4Connector
 from marketing_analytics.connectors.linkedin.connector import LinkedInConnector
 from marketing_analytics.connectors.mailchimp.connector import MailchimpConnector
 from marketing_analytics.connectors.meta_ads.connector import MetaAdsConnector
@@ -172,4 +173,29 @@ def test_linkedin_habilitado_sin_token_lanza_error_claro():
     config = AppConfig.model_validate(_CONFIG_LINKEDIN)
 
     with pytest.raises(RuntimeError, match="LINKEDIN_ACCESS_TOKEN"):
+        construir_conectores_activos(config, Secrets())
+
+
+_CONFIG_GA4 = {
+    "mailchimp": {"server_prefix": "us21", "enabled": False},
+    "ga4": {
+        "enabled": True,
+        "propiedades": [{"unidad": "Academy Cainco", "property_id": "123456789"}],
+    },
+}
+
+
+def test_registry_incluye_ga4_solo_si_esta_habilitado():
+    config = AppConfig.model_validate(_CONFIG_GA4)
+    secrets = Secrets(google_service_account_json_path="/ruta/falsa.json")
+
+    conectores = construir_conectores_activos(config, secrets)
+
+    assert any(isinstance(c, GA4Connector) for c in conectores)
+
+
+def test_ga4_habilitado_sin_credenciales_lanza_error_claro():
+    config = AppConfig.model_validate(_CONFIG_GA4)
+
+    with pytest.raises(RuntimeError, match="GOOGLE_SERVICE_ACCOUNT_JSON_PATH"):
         construir_conectores_activos(config, Secrets())

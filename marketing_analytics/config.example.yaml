@@ -74,6 +74,17 @@ linkedin:
   organization_id: "REEMPLAZAR"  # ID numérico de la organización (se ve en la URL del admin de la página)
   nombre: "REEMPLAZAR"  # nombre a mostrar en los reportes, ej. "CAINCO"
 
+ga4:
+  # Google Analytics 4: una propiedad por unidad, igual que los perfiles de
+  # Meta Orgánico. Necesita una cuenta de servicio de Google Cloud con el
+  # rol "Lector" concedido en cada propiedad (ver GOOGLE_SERVICE_ACCOUNT_JSON_PATH
+  # en .env.example) — el ID de propiedad se ve en Analytics, Administrar >
+  # Detalles de la propiedad.
+  enabled: false
+  propiedades:
+    - unidad: "Marca X"  # debe coincidir con la unidad usada en meta.organico.perfiles
+      property_id: "REEMPLAZAR"
+
 competencia:
   # Solo para el reporte PPT mensual (marketing_analytics.reports_pptx).
   # Solo Facebook: es la única red donde Meta expone públicamente

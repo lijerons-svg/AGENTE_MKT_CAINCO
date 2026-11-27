@@ -144,6 +144,19 @@ CREATE TABLE IF NOT EXISTS control_perfiles (
     actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS ga4_metricas_diarias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid TEXT NOT NULL UNIQUE,
+    unidad TEXT NOT NULL,
+    property_id TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    sesiones INTEGER NOT NULL DEFAULT 0,
+    usuarios_totales INTEGER NOT NULL DEFAULT 0,
+    usuarios_nuevos INTEGER NOT NULL DEFAULT 0,
+    creado_en TEXT NOT NULL DEFAULT (datetime('now')),
+    actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS configuracion (
     clave TEXT PRIMARY KEY,
     valor TEXT NOT NULL,
